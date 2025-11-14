@@ -17,8 +17,8 @@ class BackgroundService {
 		// Setup listeners
 		this.setupListeners();
 
-		// // Setup context menus
-		// this.setupContextMenus();
+		// Setup context menus
+		this.setupContextMenus();
 	}
 
 	private async loadState() {
@@ -40,11 +40,8 @@ class BackgroundService {
 		// Message listener for communication with content scripts
 		browser.runtime.onMessage.addListener(this.handleMessage.bind(this));
 
-		// // Tab update listener to inject/remove toolbar
-		// browser.tabs.onUpdated.addListener(this.handleTabUpdate.bind(this));
-
-		// // Tab activation listener
-		// browser.tabs.onActivated.addListener(this.handleTabActivated.bind(this));
+		// Tab update listener to inject/remove toolbar
+		browser.tabs.onUpdated.addListener(this.handleTabUpdate.bind(this));
 	}
 
 	private handleExtensionClick(tab: browser.Tabs.Tab) {
@@ -60,6 +57,13 @@ class BackgroundService {
 		}
 
 		this.saveState();
+
+		if (!tab?.id) return;
+
+		browser.tabs.sendMessage(tab.id, {
+			type: MessageType.SITE_STATE_UPDATED,
+			payload: this.state.sites[hostname],
+		});
 	}
 
 	private async handleMessage(message: unknown): Promise<unknown> {
@@ -71,9 +75,7 @@ class BackgroundService {
 					(msg.payload as { hostname: string }).hostname,
 				);
 
-			// case MessageType.TOGGLE_SITE:
-			// 	return this.toggleSite((msg.payload as { hostname: string }).hostname);
-
+			// TODO
 			// case MessageType.DOWNLOAD_IMAGE:
 			// 	return this.downloadImage(
 			// 		msg.payload as { url: string; filename?: string },
@@ -88,91 +90,37 @@ class BackgroundService {
 		return this.state.sites[hostname] || null;
 	}
 
-	// private async toggleSite(hostname: string): Promise<SiteState> {
-	// 	const currentState = this.state.sites[hostname];
-	// 	const newState: SiteState = {
-	// 		hostname,
-	// 		enabled: currentState ? !currentState.enabled : true,
-	// 		lastUpdated: Date.now(),
-	// 	};
+	private async handleTabUpdate(
+		tabId: number,
+		changeInfo: browser.Tabs.OnUpdatedChangeInfoType,
+		tab: browser.Tabs.Tab,
+	) {
+		if (changeInfo.status === "complete" && tab.url) {
+			const hostname = new URL(tab.url).hostname;
+			const siteState = this.getSiteState(hostname);
 
-	// 	this.state.sites[hostname] = newState;
-	// 	await this.saveState();
+			if (siteState) {
+				// Inject toolbar if enabled for this site
+				browser.tabs.sendMessage(tabId, {
+					type: MessageType.SITE_STATE_UPDATED,
+					payload: siteState,
+				});
+			}
+		}
+	}
 
-	// 	// Notify all tabs with this hostname
-	// 	this.notifyTabs(hostname, newState);
-
-	// 	return newState;
-	// }
-
-	// private async notifyTabs(hostname: string, state: SiteState) {
-	// 	const tabs = await browser.tabs.query({});
-	// 	tabs.forEach((tab) => {
-	// 		if (tab.url && new URL(tab.url).hostname === hostname) {
-	// 			browser.tabs.sendMessage(tab.id!, {
-	// 				type: MessageType.SITE_STATE_UPDATED,
-	// 				payload: state,
-	// 			});
-	// 		}
-	// 	});
-	// }
-
-	// private async handleTabUpdate(
-	// 	tabId: number,
-	// 	changeInfo: browser.Tabs.OnUpdatedChangeInfoType,
-	// 	tab: browser.Tabs.Tab,
-	// ) {
-	// 	if (changeInfo.status === "complete" && tab.url) {
-	// 		const hostname = new URL(tab.url).hostname;
-	// 		const siteState = this.getSiteState(hostname);
-
-	// 		if (siteState?.enabled) {
-	// 			// Inject toolbar if enabled for this site
-	// 			browser.tabs.sendMessage(tabId, {
-	// 				type: MessageType.SITE_STATE_UPDATED,
-	// 				payload: siteState,
-	// 			});
-	// 		}
-	// 	}
-	// }
-
-	// private async handleTabActivated(
-	// 	activeInfo: browser.Tabs.OnActivatedActiveInfoType,
-	// ) {
-	// 	const tab = await browser.tabs.get(activeInfo.tabId);
-	// 	if (tab.url) {
-	// 		const hostname = new URL(tab.url).hostname;
-	// 		const siteState = this.getSiteState(hostname);
-
-	// 		// Update extension icon badge
-	// 		await this.updateBadge(activeInfo.tabId, siteState?.enabled || false);
-	// 	}
-	// }
-
-	// private async updateBadge(tabId: number, enabled: boolean) {
-	// 	await browser.action.setBadgeText({
-	// 		text: enabled ? "ON" : "",
-	// 		tabId,
-	// 	});
-
-	// 	await browser.action.setBadgeBackgroundColor({
-	// 		color: "#10b981",
-	// 		tabId,
-	// 	});
-	// }
-
-	// private setupContextMenus() {
-	// 	// browser.contextMenus.create({
-	// 	// 	id: "download-image",
-	// 	// 	title: "Download Image",
-	// 	// 	contexts: ["image"],
-	// 	// });
-	// 	// browser.contextMenus.onClicked.addListener((info) => {
-	// 	// 	if (info.menuItemId === "download-image" && info.srcUrl) {
-	// 	// 		this.downloadImage({ url: info.srcUrl });
-	// 	// 	}
-	// 	// });
-	// }
+	private setupContextMenus() {
+		browser.contextMenus.create({
+			id: "save-image",
+			title: "Save Image",
+			contexts: ["image"],
+		});
+		browser.contextMenus.onClicked.addListener((info) => {
+			if (info.menuItemId === "save-image" && info.srcUrl) {
+				// this.downloadImage({ url: info.srcUrl });
+			}
+		});
+	}
 
 	// private async downloadImage(imageInfo: { url: string; filename?: string }) {
 	// 	const filename = imageInfo.filename || this.generateFilename(imageInfo.url);
