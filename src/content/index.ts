@@ -5,21 +5,23 @@
 // import type { ImagePickerManager } from "./picker/ImagePickerManager";
 
 import browser from "webextension-polyfill";
+import { ToolbarManager } from "@/content/toolbar/ToolbarManager";
 import { type Message, MessageType } from "@/types";
-import { extensionName } from "@/utils/config";
 
 class ContentScriptManager {
 	private hostname: string;
 	private enabled = false;
-	// private toolbarManager: ToolbarManager;
+	private toolbarManager: ToolbarManager;
+	// TODO
 	// private pickerManager: ImagePickerManager;
 	private initialized = false;
 
 	constructor() {
 		this.hostname = window.location.hostname;
-		// this.toolbarManager = new ToolbarManager(
-		// 	this.handleToolbarAction.bind(this),
-		// );
+		this.toolbarManager = new ToolbarManager(
+			this.handleToolbarAction.bind(this),
+		);
+		// TODO
 		// this.pickerManager = new ImagePickerManager(
 		// 	this.handleImageClick.bind(this),
 		// );
@@ -38,8 +40,8 @@ class ContentScriptManager {
 		// Setup message listener
 		this.setupMessageListener();
 
-		// // Apply initial state
-		// this.applyState();
+		// Apply initial state
+		this.applyState();
 	}
 
 	private async fetchSiteState() {
@@ -50,12 +52,8 @@ class ContentScriptManager {
 			});
 
 			this.enabled = response || false;
-			console.log(
-				`${extensionName} - Fetched initial site state:`,
-				this.enabled,
-			);
 		} catch (error) {
-			console.error(`${extensionName} - Failed to fetch site state:`, error);
+			console.error("Inspo Snaps - Failed to fetch site state:", error);
 		}
 	}
 
@@ -70,26 +68,31 @@ class ContentScriptManager {
 
 	private applyState() {
 		if (this.enabled) {
-			console.log("Enabled");
-			// this.toolbarManager.show();
+			this.toolbarManager.show();
 		} else {
-			console.log("Disabled");
-			// this.toolbarManager.hide();
+			this.toolbarManager.hide();
+			// TODO
 			// this.pickerManager.deactivate();
 		}
 	}
 
-	// private handleToolbarAction(action: string) {
-	// 	switch (action) {
-	// 		case "activate-picker":
-	// 			this.pickerManager.activate();
-	// 			break;
-	// 		case "deactivate-picker":
-	// 			this.pickerManager.deactivate();
-	// 			break;
-	// 	}
-	// }
+	private handleToolbarAction(action: string) {
+		switch (action) {
+			case "activate-picker":
+				console.log("Activated picker");
+				// TODO
 
+				// this.pickerManager.activate();
+				break;
+			case "deactivate-picker":
+				console.log("Deactivated picker");
+				// TODO
+				// this.pickerManager.deactivate();
+				break;
+		}
+	}
+
+	// TODO
 	// private async handleImageClick(imageInfo: {
 	// 	url: string;
 	// 	element: HTMLElement;
@@ -107,6 +110,7 @@ class ContentScriptManager {
 	// 	this.showDownloadFeedback(imageInfo.element);
 	// }
 
+	// TODO
 	// private extractFilename(url: string): string {
 	// 	try {
 	// 		const urlObj = new URL(url, window.location.href);
@@ -118,12 +122,14 @@ class ContentScriptManager {
 	// 	}
 	// }
 
+	// TODO
 	// private showDownloadFeedback(element: HTMLElement) {
 	// 	// Create feedback element
 	// 	const feedback = document.createElement("div");
 	// 	feedback.className = "image-download-feedback";
 	// 	feedback.textContent = "✓ Downloaded";
 
+	// TODO
 	// 	// Position feedback
 	// 	const rect = element.getBoundingClientRect();
 	// 	feedback.style.cssText = `
