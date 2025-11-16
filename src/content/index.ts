@@ -6,6 +6,7 @@
 
 import browser from "webextension-polyfill";
 import { ToolbarManager } from "@/content/toolbar/ToolbarManager";
+import { extensionName } from "@/lib/constants";
 import { type Message, MessageType } from "@/types";
 
 class ContentScriptManager {
@@ -14,7 +15,7 @@ class ContentScriptManager {
 	private toolbarManager: ToolbarManager;
 	// TODO
 	// private pickerManager: ImagePickerManager;
-	private initialized = false;
+	private initialised = false;
 
 	constructor() {
 		this.hostname = window.location.hostname;
@@ -26,13 +27,13 @@ class ContentScriptManager {
 		// 	this.handleImageClick.bind(this),
 		// );
 
-		this.initialize();
+		this.initialise();
 	}
 
-	private async initialize() {
-		// Prevent double initialization
-		if (this.initialized) return;
-		this.initialized = true;
+	private async initialise() {
+		// Prevent double initialisation
+		if (this.initialised) return;
+		this.initialised = true;
 
 		// Get initial state
 		await this.fetchSiteState();
@@ -53,7 +54,7 @@ class ContentScriptManager {
 
 			this.enabled = response || false;
 		} catch (error) {
-			console.error("Inspo Snaps - Failed to fetch site state:", error);
+			console.error(`${extensionName} - Failed to fetch site state:`, error);
 		}
 	}
 
@@ -155,7 +156,7 @@ class ContentScriptManager {
 	// }
 }
 
-// Initialize content script
+// Initialise content script
 if (document.readyState === "loading") {
 	document.addEventListener("DOMContentLoaded", () => {
 		new ContentScriptManager();

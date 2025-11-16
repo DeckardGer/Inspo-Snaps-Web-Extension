@@ -7,10 +7,10 @@ class BackgroundService {
 	};
 
 	constructor() {
-		this.initialize();
+		this.initialise();
 	}
 
-	private async initialize() {
+	private async initialise() {
 		// Load saved state
 		await this.loadState();
 
@@ -147,5 +147,5 @@ class BackgroundService {
 	// }
 }
 
-// Initialize background service
+// Initialise background service
 new BackgroundService();

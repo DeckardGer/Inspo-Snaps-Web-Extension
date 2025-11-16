@@ -1,34 +1,138 @@
 import { Camera, ExternalLink, Folder, GripVertical } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { SAFE_ZONE } from "@/lib/constants";
+import {
+	calculatePosition,
+	getBestCorner,
+	getToolbarSize,
+} from "@/lib/helpers";
+import type { Corner } from "@/types";
 
 interface ToolbarProps {
 	onAction: (action: string) => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({ onAction }) => {
-	// const [isPickerActive, setIsPickerActive] = useState(false);
+	const toolbarRef = useRef<HTMLDivElement>(null);
+	const position = useRef({ x: 24, y: 24 });
+	const dragStartPos = useRef({ x: 0, y: 0 });
+	const dragOffset = useRef({ x: 0, y: 0 });
+	const isDragging = useRef(false);
+	const corner = useRef<Corner>("top-left");
 
-	// const handlePickerToggle = () => {
-	// 	const action = isPickerActive ? "deactivate-picker" : "activate-picker";
-	// 	onAction(action);
-	// 	setIsPickerActive(!isPickerActive);
-	// };
+	const [isMinimised, setIsMinimised] = useState(true);
 
-	const extraStyles = {
-		transform: "translate(24px, 24px)",
-		width: "168px",
-		maxWidth: "calc(100vw - 48px)",
-		height: "36px",
-		maxHeight: "calc(100vh - 48px)",
+	const toggleFolders = () => {
+		if (!toolbarRef.current) return;
+		toolbarRef.current.style.transition =
+			"all 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+
+		const { width, height } = getToolbarSize(!isMinimised);
+
+		const { x, y } = calculatePosition(corner.current, width, height);
+
+		position.current = { x, y };
+		toolbarRef.current.style.transform = `translate(${x}px, ${y}px)`;
+
+		setIsMinimised(!isMinimised);
 	};
+
+	const handleMouseDown = (e: React.MouseEvent) => {
+		isDragging.current = true;
+
+		dragStartPos.current = {
+			x: e.clientX,
+			y: e.clientY,
+		};
+
+		dragOffset.current = {
+			x: e.clientX - position.current.x,
+			y: e.clientY - position.current.y,
+		};
+
+		if (!toolbarRef.current) return;
+		toolbarRef.current.style.transition = "none";
+	};
+
+	useEffect(() => {
+		// Set initial transform on mount
+		if (toolbarRef.current) {
+			toolbarRef.current.style.transform = `translate(${position.current.x}px, ${position.current.y}px)`;
+		}
+
+		const handleMouseMove = (e: MouseEvent) => {
+			if (!isDragging.current || !toolbarRef.current) return;
+
+			const newX = e.clientX - dragOffset.current.x;
+			const newY = e.clientY - dragOffset.current.y;
+
+			position.current = {
+				x: newX,
+				y: newY,
+			};
+
+			toolbarRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
+		};
+
+		const handleMouseUp = (e: MouseEvent) => {
+			if (!isDragging.current) return;
+
+			isDragging.current = false;
+
+			if (!toolbarRef.current) return;
+			toolbarRef.current.style.transition =
+				"transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+
+			const bestCorner = getBestCorner(
+				e.clientX,
+				e.clientY,
+				dragStartPos.current.x,
+				dragStartPos.current.y,
+			);
+			corner.current = bestCorner;
+
+			const { width, height } = getToolbarSize(isMinimised);
+
+			const { x, y } = calculatePosition(bestCorner, width, height);
+			position.current = { x, y };
+			toolbarRef.current.style.transform = `translate(${x}px, ${y}px)`;
+		};
+
+		const handleResize = () => {
+			if (!toolbarRef.current) return;
+
+			// Recalculate position based on current corner and new window size
+			const { width, height } = getToolbarSize(isMinimised);
+			const { x, y } = calculatePosition(corner.current, width, height);
+
+			position.current = { x, y };
+			toolbarRef.current.style.transform = `translate(${x}px, ${y}px)`;
+		};
+
+		document.addEventListener("mousemove", handleMouseMove);
+		document.addEventListener("mouseup", handleMouseUp);
+		window.addEventListener("resize", handleResize);
+
+		return () => {
+			document.removeEventListener("mousemove", handleMouseMove);
+			document.removeEventListener("mouseup", handleMouseUp);
+			window.removeEventListener("resize", handleResize);
+		};
+	}, [isMinimised]);
 
 	return (
 		<div
-			className="flex fixed inset-0 select-none z-50 touch-none opacity-0 animate-fade-in"
-			style={extraStyles}
+			ref={toolbarRef}
+			className="flex fixed inset-0 select-none touch-none opacity-0 shadow-2xl animate-fade-in z-999999999"
+			style={{
+				width: getToolbarSize(isMinimised).width,
+				maxWidth: `calc(100vw - ${SAFE_ZONE * 2}px)`,
+				height: getToolbarSize(isMinimised).height,
+				maxHeight: `calc(100vh - ${SAFE_ZONE * 2}px)`,
+			}}
 		>
 			<div className="flex flex-1 flex-col bg-black rounded-md overflow-hidden">
 				<div className="flex flex-1 flex-col overflow-hidden">Top</div>
@@ -37,16 +141,22 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onAction }) => {
 						<Button variant="ghost" size="icon">
 							<Camera />
 						</Button>
-						<Button variant="ghost" size="icon">
+						<Button variant="ghost" size="icon" onClick={toggleFolders}>
 							<Folder />
 						</Button>
 						<Button variant="ghost" size="icon" className="rounded-r-none">
 							<ExternalLink />
 						</Button>
 					</ButtonGroup>
-					<div className="flex justify-center items-center ml-auto px-1 cursor-grab">
+					<Button
+						variant="ghost"
+						size="icon"
+						className="ml-auto w-6 rounded-l-none cursor-grab active:cursor-grabbing"
+						onMouseDown={handleMouseDown}
+						aria-label="Drag toolbar"
+					>
 						<GripVertical size={16} />
-					</div>
+					</Button>
 				</div>
 			</div>
 		</div>

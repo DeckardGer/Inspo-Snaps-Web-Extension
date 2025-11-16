@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom/client";
 import { Toolbar } from "@/content/toolbar/Toolbar";
+import { normaliseTailwind } from "@/lib/utils";
 import styles from "@/styles.css?inline";
-import { normalizeTailwind } from "@/utils/utils";
 
 export class ToolbarManager {
 	private rootContainer: HTMLElement | null = null;
@@ -49,7 +49,7 @@ export class ToolbarManager {
 
 		// Inject Tailwind CSS
 		const styleElement = document.createElement("style");
-		styleElement.textContent = normalizeTailwind(styles);
+		styleElement.textContent = normaliseTailwind(styles);
 		shadowRoot.appendChild(styleElement);
 
 		// Create React mount point

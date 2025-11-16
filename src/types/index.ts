@@ -18,6 +18,8 @@ export const MessageType = {
 
 export type MessageTypeType = (typeof MessageType)[keyof typeof MessageType];
 
+export type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
 // export interface ImageInfo {
 // 	url: string;
 // 	width: number;
