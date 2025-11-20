@@ -3,12 +3,15 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { Separator } from "@/components/ui/separator";
+import { FolderMenu } from "@/content/toolbar/FolderMenu";
 import { SAFE_ZONE } from "@/lib/constants";
 import {
 	calculatePosition,
 	getBestCorner,
 	getToolbarSize,
 } from "@/lib/helpers";
+import { cn } from "@/lib/utils";
 import type { Corner } from "@/types";
 
 interface ToolbarProps {
@@ -126,7 +129,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onAction }) => {
 	return (
 		<div
 			ref={toolbarRef}
-			className="flex fixed inset-0 select-none touch-none opacity-0 shadow-2xl animate-fade-in z-999999999"
+			className="flex fixed inset-0 select-none touch-none opacity-0 shadow-2xl animate-fade-in z-999999999 backdrop-blur-sm rounded-[7px] border border-border-outside"
 			style={{
 				width: getToolbarSize(isMinimised).width,
 				maxWidth: `calc(100vw - ${SAFE_ZONE * 2}px)`,
@@ -134,11 +137,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onAction }) => {
 				maxHeight: `calc(100vh - ${SAFE_ZONE * 2}px)`,
 			}}
 		>
-			<div className="flex flex-1 flex-col bg-black rounded-md overflow-hidden">
-				<div className="flex flex-1 flex-col overflow-hidden">Top</div>
+			<div className="flex flex-1 flex-col bg-background rounded-md overflow-hidden">
+				<div className="flex flex-1 flex-col overflow-hidden">
+					<FolderMenu isMinimised={isMinimised} />
+					<Separator />
+				</div>
 				<div className="flex flex-1 max-h-9 min-h-9 overflow-hidden">
 					<ButtonGroup>
-						<Button variant="ghost" size="icon">
+						<Button
+							variant="ghost"
+							size="icon"
+							className={isMinimised ? "" : "rounded-tl-none"}
+						>
 							<Camera />
 						</Button>
 						<Button variant="ghost" size="icon" onClick={toggleFolders}>
@@ -151,7 +161,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onAction }) => {
 					<Button
 						variant="ghost"
 						size="icon"
-						className="ml-auto w-6 rounded-l-none cursor-grab active:cursor-grabbing"
+						className={cn(
+							"ml-auto w-6 rounded-l-none cursor-grab active:cursor-grabbing",
+							isMinimised ? "" : "rounded-tr-none",
+						)}
 						onMouseDown={handleMouseDown}
 						aria-label="Drag toolbar"
 					>

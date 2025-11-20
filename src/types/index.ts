@@ -20,6 +20,18 @@ export type MessageTypeType = (typeof MessageType)[keyof typeof MessageType];
 
 export type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
+export type Folder = {
+	name: string;
+	id: string;
+	folders: Folder[];
+};
+
+export type FlattenedFolder = {
+	folder: Folder;
+	path: string[];
+	depth: number;
+};
+
 // export interface ImageInfo {
 // 	url: string;
 // 	width: number;

@@ -5,7 +5,7 @@ import {
 	MINIMISED_WIDTH,
 	SAFE_ZONE,
 } from "@/lib/constants";
-import type { Corner } from "@/types";
+import type { Corner, FlattenedFolder, Folder } from "@/types";
 
 // Get the toolbar size based on whether it is minimised or maximised
 export const getToolbarSize = (isMinimised: boolean) => {
@@ -143,3 +143,23 @@ export const calculatePosition = (
 
 	return { x, y };
 };
+
+// Flattens the folder tree for search
+export function flattenFolders(
+	folders: Folder[],
+	path: string[] = [],
+	depth: number = 0,
+): FlattenedFolder[] {
+	const result: FlattenedFolder[] = [];
+
+	for (const folder of folders) {
+		const currentPath = [...path, folder.name];
+		result.push({ folder, path: currentPath, depth });
+
+		if (folder.folders.length > 0) {
+			result.push(...flattenFolders(folder.folders, currentPath, depth + 1));
+		}
+	}
+
+	return result;
+}
