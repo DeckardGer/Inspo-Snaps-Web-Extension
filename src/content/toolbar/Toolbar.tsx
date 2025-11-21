@@ -4,27 +4,26 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Separator } from "@/components/ui/separator";
+import { saveToolbarCorner } from "@/content/index";
 import { FolderMenu } from "@/content/toolbar/FolderMenu";
 import { SAFE_ZONE } from "@/lib/constants";
-import {
-	calculatePosition,
-	getBestCorner,
-	getToolbarSize,
-} from "@/lib/helpers";
+import { calculatePosition, getBestCorner, getToolbarSize } from "@/lib/helpers";
 import { cn } from "@/lib/utils";
 import type { Corner } from "@/types";
 
 interface ToolbarProps {
-	onAction: (action: string) => void;
+	initialCorner: Corner;
 }
 
-export const Toolbar: React.FC<ToolbarProps> = ({ onAction }) => {
+export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	const toolbarRef = useRef<HTMLDivElement>(null);
-	const position = useRef({ x: 24, y: 24 });
+	const { width, height } = getToolbarSize(true);
+	const initialPosition = calculatePosition(initialCorner, width, height);
+	const position = useRef(initialPosition);
 	const dragStartPos = useRef({ x: 0, y: 0 });
 	const dragOffset = useRef({ x: 0, y: 0 });
 	const isDragging = useRef(false);
-	const corner = useRef<Corner>("top-left");
+	const corner = useRef<Corner>(initialCorner);
 
 	const [isMinimised, setIsMinimised] = useState(true);
 
@@ -61,7 +60,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onAction }) => {
 	};
 
 	useEffect(() => {
-		// Set initial transform on mount
+		// Set initial position
 		if (toolbarRef.current) {
 			toolbarRef.current.style.transform = `translate(${position.current.x}px, ${position.current.y}px)`;
 		}
@@ -96,6 +95,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ onAction }) => {
 				dragStartPos.current.y,
 			);
 			corner.current = bestCorner;
+			saveToolbarCorner(bestCorner);
 
 			const { width, height } = getToolbarSize(isMinimised);
 

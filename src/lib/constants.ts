@@ -4,3 +4,5 @@ export const MINIMISED_WIDTH = 170;
 export const MINIMISED_HEIGHT = 38;
 export const MAXIMISED_WIDTH = 550;
 export const MAXIMISED_HEIGHT = 415;
+export const TOOLBAR_CORNER_KEY = "toolbarCorner";
+export const ENABLED_SITES_KEY = "enabledSites";
