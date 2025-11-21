@@ -19,7 +19,7 @@ const getSiteState = async (): Promise<boolean> => {
 
 const loadToolbarCorner = async (): Promise<Corner> => {
 	const stored = await browser.storage.local.get(TOOLBAR_CORNER_KEY);
-	return (stored[TOOLBAR_CORNER_KEY] as Corner) || "top-left";
+	return (stored[TOOLBAR_CORNER_KEY] as Corner) || "bottom-right";
 };
 
 export const saveToolbarCorner = async (corner: Corner): Promise<void> => {

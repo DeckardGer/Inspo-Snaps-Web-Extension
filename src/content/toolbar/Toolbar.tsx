@@ -7,7 +7,11 @@ import { Separator } from "@/components/ui/separator";
 import { saveToolbarCorner } from "@/content/index";
 import { FolderMenu } from "@/content/toolbar/FolderMenu";
 import { SAFE_ZONE } from "@/lib/constants";
-import { calculatePosition, getBestCorner, getToolbarSize } from "@/lib/helpers";
+import {
+	calculatePosition,
+	getBestCorner,
+	getToolbarSize,
+} from "@/lib/helpers";
 import { cn } from "@/lib/utils";
 import type { Corner } from "@/types";
 
