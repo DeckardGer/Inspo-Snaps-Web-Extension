@@ -207,7 +207,14 @@ export const FolderMenu = ({
 		<div className="command-bar flex flex-col flex-1 min-h-0">
 			<Command
 				onKeyDown={(e) => {
-					if (e.key === "Escape" || (e.key === "Backspace" && !search)) {
+					if (e.key === "Escape") {
+						e.preventDefault();
+						if (search) {
+							setSearch("");
+						} else {
+							setPages((pages) => pages.slice(0, -1));
+						}
+					} else if (e.key === "Backspace" && !search) {
 						e.preventDefault();
 						setPages((pages) => pages.slice(0, -1));
 					}
