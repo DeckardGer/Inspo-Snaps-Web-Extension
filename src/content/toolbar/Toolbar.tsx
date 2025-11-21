@@ -74,6 +74,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		fetchFolders().then(setFolders);
 	}, []);
 
+	const openWebsite = () => {
+		window.open("https://insposnaps.com", "_blank");
+	};
+
 	const toggleFolders = () => {
 		if (!toolbarRef.current) return;
 		toolbarRef.current.style.transition =
@@ -201,7 +205,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 						<Button variant="ghost" size="icon" onClick={toggleFolders}>
 							<FolderIcon />
 						</Button>
-						<Button variant="ghost" size="icon" className="rounded-r-none">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="rounded-r-none"
+							onClick={openWebsite}
+						>
 							<ExternalLink />
 						</Button>
 					</ButtonGroup>

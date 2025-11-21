@@ -6,3 +6,4 @@ export const MAXIMISED_WIDTH = 550;
 export const MAXIMISED_HEIGHT = 415;
 export const TOOLBAR_CORNER_KEY = "toolbarCorner";
 export const ENABLED_SITES_KEY = "enabledSites";
+export const WEBSITE_URL = "https://insposnaps.com";
