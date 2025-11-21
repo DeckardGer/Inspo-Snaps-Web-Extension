@@ -1,6 +1,14 @@
 import { Command } from "cmdk";
-import { Folder as FolderIcon, Plus } from "lucide-react";
+import { ChevronRight, Folder as FolderIcon, Home, Plus } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { flattenFolders } from "@/lib/helpers";
 import type { FlattenedFolder, Folder } from "@/types";
 
@@ -70,32 +78,6 @@ const SAMPLE_FOLDERS: Folder[] = [
 	},
 ];
 
-// Utility: Find folder by ID in tree
-function findFolderById(folders: Folder[], id: string): Folder | null {
-	for (const folder of folders) {
-		if (folder.id === id) return folder;
-		if (folder.folders.length > 0) {
-			const found = findFolderById(folder.folders, id);
-			if (found) return found;
-		}
-	}
-	return null;
-}
-
-/**
- * FolderMenu component for folder navigation
- *
- * Usage with API data:
- * ```tsx
- * function MyComponent() {
- *   const { data: folders } = useQuery(['folders'], fetchFolders);
- *   return <FolderMenu folders={folders || []} />;
- * }
- * ```
- *
- * The `flattenFolders` function is memoized and will only re-run when
- * the `folders` array reference changes.
- */
 export const FolderMenu = ({
 	folders = SAMPLE_FOLDERS,
 	isMinimised = false,
@@ -106,37 +88,118 @@ export const FolderMenu = ({
 	const [search, setSearch] = useState("");
 	const [pages, setPages] = useState<string[]>([]); // Stack of folder IDs
 	const inputRef = useRef<HTMLInputElement>(null);
+	const listRef = useRef<HTMLDivElement>(null);
+
+	// Build ID lookup map and parent map once - O(1) folder access instead of O(n) tree traversal
+	const { folderMap, parentMap } = useMemo(() => {
+		const fMap = new Map<string, Folder>();
+		const pMap = new Map<string, string>(); // child ID -> parent ID
+
+		const buildMaps = (
+			folderList: Folder[],
+			parentId: string | null = null,
+		) => {
+			for (const folder of folderList) {
+				fMap.set(folder.id, folder);
+				if (parentId) {
+					pMap.set(folder.id, parentId);
+				}
+				if (folder.folders.length > 0) {
+					buildMaps(folder.folders, folder.id);
+				}
+			}
+		};
+
+		buildMaps(folders);
+		return { folderMap: fMap, parentMap: pMap };
+	}, [folders]);
+
+	// Build full path of folder IDs from root to target folder
+	const getFullPath = (folderId: string): string[] => {
+		const path: string[] = [];
+		let currentId: string | undefined = folderId;
+
+		while (currentId) {
+			path.unshift(currentId);
+			currentId = parentMap.get(currentId);
+		}
+
+		return path;
+	};
 
 	// Memoize flattened folders - only recalculates when folders array changes
 	const flattenedFolders = useMemo(() => flattenFolders(folders), [folders]);
 
-	// Get current folder based on navigation stack
-	const currentFolder =
-		pages.length > 0 ? findFolderById(folders, pages[pages.length - 1]) : null;
+	// Get current folder based on navigation stack - O(1) lookup instead of O(n) traversal
+	const currentFolder = useMemo(
+		() =>
+			pages.length > 0
+				? (folderMap.get(pages[pages.length - 1]) ?? null)
+				: null,
+		[pages, folderMap],
+	);
 
-	// Get current folders to display
-	const currentFolders = currentFolder ? currentFolder.folders : folders;
+	// Get current folders to display - memoized to prevent unnecessary re-renders
+	const currentFolders = useMemo(
+		() => (currentFolder ? currentFolder.folders : folders),
+		[currentFolder, folders],
+	);
 
-	// // Build breadcrumb path
-	// const breadcrumbPath = useMemo(() => {
-	// 	const path: string[] = ["Home"];
-	// 	for (const folderId of pages) {
-	// 		const folder = findFolderById(folders, folderId);
-	// 		if (folder) path.push(folder.name);
-	// 	}
-	// 	return path;
-	// }, [pages, folders]);
+	// Build breadcrumb path with folder objects for navigation
+	const breadcrumbPath = useMemo(() => {
+		const path: Array<{ name: string; index: number }> = [
+			{ name: "Home", index: -1 },
+		];
+		for (let i = 0; i < pages.length; i++) {
+			const folder = folderMap.get(pages[i]);
+			if (folder) {
+				path.push({ name: folder.name, index: i });
+			}
+		}
+		return path;
+	}, [pages, folderMap]);
 
 	// Navigate into a folder
 	const navigateToFolder = (folderId: string) => {
-		setPages((prev) => [...prev, folderId]);
+		// If navigating from search, build the full path
+		if (search) {
+			setPages(getFullPath(folderId));
+		} else {
+			// Normal navigation - append to current path
+			setPages((prev) => [...prev, folderId]);
+		}
 		setSearch(""); // Clear search when navigating
+
+		// Refocus input after navigation
+		setTimeout(() => {
+			inputRef.current?.focus();
+		}, 0);
+	};
+
+	// Navigate to a specific breadcrumb level
+	const navigateToBreadcrumb = (index: number) => {
+		if (index === -1) {
+			// Home - clear all navigation
+			setPages([]);
+		} else {
+			// Navigate to specific level by slicing pages array
+			setPages((prev) => prev.slice(0, index + 1));
+		}
+
+		// Refocus input after navigation
+		setTimeout(() => {
+			inputRef.current?.focus();
+		}, 0);
 	};
 
 	// Focus input when maximized
 	useEffect(() => {
 		if (!isMinimised && inputRef.current) {
 			inputRef.current.focus();
+		}
+
+		if (listRef.current) {
+			listRef.current.scrollTop = 0;
 		}
 	}, [isMinimised]);
 
@@ -156,42 +219,104 @@ export const FolderMenu = ({
 					onValueChange={setSearch}
 					placeholder="Search Folders..."
 				/>
-				<Command.List>
-					<Command.Empty>No results found.</Command.Empty>
+				{search.length === 0 && (
+					<div className="px-4 py-3 border-b border-border">
+						<Breadcrumb>
+							<BreadcrumbList>
+								{breadcrumbPath.map((item, idx) => {
+									const isLast = idx === breadcrumbPath.length - 1;
+									const isHome = item.index === -1;
 
-					{/* {!search && pages.length > 0 && (
-					<div
-						style={{
-							padding: "8px 16px",
-							fontSize: "12px",
-							opacity: 0.6,
-							borderBottom: "1px solid var(--gray6)",
-							marginBottom: "8px",
-						}}
-					>
-						{breadcrumbPath.join(" / ")}
+									return (
+										<div key={item.index} className="contents">
+											<BreadcrumbItem>
+												{isLast ? (
+													<BreadcrumbPage className="flex items-center gap-1.5">
+														{isHome && <Home size={14} />}
+														{item.name}
+													</BreadcrumbPage>
+												) : (
+													<BreadcrumbLink
+														onClick={() => navigateToBreadcrumb(item.index)}
+														className="cursor-pointer flex items-center gap-1.5"
+													>
+														{isHome && <Home size={14} />}
+														{item.name}
+													</BreadcrumbLink>
+												)}
+											</BreadcrumbItem>
+											{!isLast && <BreadcrumbSeparator />}
+										</div>
+									);
+								})}
+							</BreadcrumbList>
+						</Breadcrumb>
 					</div>
-				)} */}
+				)}
+				<Command.List ref={listRef}>
+					<Command.Empty>No folders found.</Command.Empty>
 
-					{/* {search ? (
-					// Search mode: Show all folders (flattened)
-					<SearchView
-						flattenedFolders={flattenedFolders}
-						onSelect={navigateToFolder}
-					/>
-				) : (
-					// Normal mode: Show current folder's contents
-					<FolderView folders={currentFolders} onSelect={navigateToFolder} />
-				)} */}
-					<FoldersView />
+					{search ? (
+						// Search mode: Show all folders (flattened)
+						<SearchView
+							flattenedFolders={flattenedFolders}
+							onSelect={navigateToFolder}
+						/>
+					) : (
+						// Normal mode: Show current folder's contents
+						<FoldersView folders={currentFolders} onSelect={navigateToFolder} />
+					)}
 				</Command.List>
 			</Command>
 		</div>
 	);
 };
 
-// FolderView: Shows folders in the current directory
-function FolderView({
+// SearchView: Shows all folders (flattened) when searching
+function SearchView({
+	flattenedFolders,
+	onSelect,
+}: {
+	flattenedFolders: FlattenedFolder[];
+	onSelect: (folderId: string) => void;
+}) {
+	return (
+		<>
+			<Command.Group heading="All Folders">
+				{flattenedFolders.map(({ folder, path }) => {
+					const parentPath = path.slice(0, -1);
+					return (
+						<Command.Item
+							key={folder.id}
+							value={`${folder.name} ${path.join(" ")}`}
+							onSelect={() => onSelect(folder.id)}
+						>
+							<FolderIcon size={18} />
+							{folder.name}
+
+							{parentPath.length > 0 && (
+								<div cmdk-shortcuts="">
+									{parentPath.map((dir, idx) => (
+										// biome-ignore lint/suspicious/noArrayIndexKey: directory doesn't have unique name
+										<span key={idx} className="inline-flex items-center">
+											{idx > 0 && <ChevronRight size={12} className="mx-0.5" />}
+											{dir}
+										</span>
+									))}
+								</div>
+							)}
+						</Command.Item>
+					);
+				})}
+			</Command.Group>
+
+			<Actions />
+		</>
+	);
+}
+
+// FoldersView: Pure presentational component - just renders the folders passed to it
+function FoldersView({
 	folders,
 	onSelect,
 }: {
@@ -211,82 +336,12 @@ function FolderView({
 							<FolderIcon size={18} />
 							{folder.name}
 							{folder.folders.length > 0 && (
-								<span
-									style={{ marginLeft: "auto", opacity: 0.5, fontSize: "12px" }}
-								>
-									{folder.folders.length}
-								</span>
+								<div cmdk-shortcuts="">{folder.folders.length}</div>
 							)}
 						</Command.Item>
 					))}
 				</Command.Group>
 			)}
-
-			<Actions />
-		</>
-	);
-}
-
-// SearchView: Shows all folders (flattened) when searching
-function SearchView({
-	flattenedFolders,
-	onSelect,
-}: {
-	flattenedFolders: FlattenedFolder[];
-	onSelect: (folderId: string) => void;
-}) {
-	return (
-		<>
-			<Command.Group heading="All Folders">
-				{flattenedFolders.map(({ folder, path }) => (
-					<Command.Item
-						key={folder.id}
-						value={`${folder.name} ${path.join(" ")}`}
-						onSelect={() => onSelect(folder.id)}
-					>
-						<FolderIcon size={18} />
-						<div
-							style={{ display: "flex", flexDirection: "column", gap: "2px" }}
-						>
-							<span>{folder.name}</span>
-							<span style={{ fontSize: "11px", opacity: 0.5 }}>
-								{path.slice(0, -1).join(" / ")}
-							</span>
-						</div>
-					</Command.Item>
-				))}
-			</Command.Group>
-
-			<Actions />
-		</>
-	);
-}
-
-function FoldersView() {
-	return (
-		<>
-			<Command.Group heading="Folders">
-				<Command.Item>
-					<FolderIcon size={18} />
-					Folder 1
-				</Command.Item>
-				<Command.Item>
-					<FolderIcon size={18} />
-					Folder 2
-				</Command.Item>
-				<Command.Item>
-					<FolderIcon size={18} />
-					Folder 3
-				</Command.Item>
-				<Command.Item>
-					<FolderIcon size={18} />
-					Folder 4
-				</Command.Item>
-				<Command.Item>
-					<FolderIcon size={18} />
-					Folder 5
-				</Command.Item>
-			</Command.Group>
 
 			<Actions />
 		</>

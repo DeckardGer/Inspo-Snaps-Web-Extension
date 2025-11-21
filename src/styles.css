@@ -101,7 +101,7 @@
   --hem: 16px; /* hem = Host rem */
 
   --radius: 0.625rem;
-  --background: oklch(0.145 0 0);
+  --background: oklch(0 0 0 / 85%);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -217,27 +217,28 @@
     transition: 100ms ease;
     transition-property: height;
     outline: none;
-    padding: 8px 8px 0 8px;
+    margin: 8px 0;
+    padding: 0 8px;
   }
 
-  .command-bar [cmdk-vercel-shortcuts] {
+  .command-bar [cmdk-shortcuts] {
     display: flex;
+    align-items: center;
+    justify-content: center;
     margin-left: auto;
-    gap: 8px;
-  }
-
-  .command-bar [cmdk-vercel-shortcuts] kbd {
     font-size: 12px;
-    min-width: 20px;
     padding: 4px;
-    height: 20px;
     border-radius: 4px;
+    min-width: 20px;
+    line-height: 1;
     color: var(--gray11);
     background: var(--gray4);
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
+  }
+
+  .command-bar [cmdk-shortcuts] svg {
+    width: 12px;
+    height: 12px;
   }
 
   .command-bar *:not([hidden]) + [cmdk-group] {
