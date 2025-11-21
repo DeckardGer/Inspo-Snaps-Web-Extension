@@ -1,5 +1,11 @@
 import { Command } from "cmdk";
-import { ChevronRight, Folder as FolderIcon, Home, Plus } from "lucide-react";
+import {
+	ChevronRight,
+	Folder as FolderIcon,
+	Home,
+	Loader2,
+	Plus,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Breadcrumb,
@@ -12,77 +18,11 @@ import {
 import { flattenFolders } from "@/lib/helpers";
 import type { FlattenedFolder, Folder } from "@/types";
 
-// Sample data for testing - replace with API data
-const SAMPLE_FOLDERS: Folder[] = [
-	{
-		name: "Folder 1",
-		id: "folder-1",
-		folders: [
-			{
-				name: "Folder 1 A",
-				id: "folder-1-a",
-				folders: [],
-			},
-			{
-				name: "Folder 1 B",
-				id: "folder-1-b",
-				folders: [
-					{
-						name: "Folder 1 B A",
-						id: "folder-1-b-a",
-						folders: [],
-					},
-					{
-						name: "Folder 1 B B",
-						id: "folder-1-b-b",
-						folders: [],
-					},
-					{
-						name: "Folder 1 B C",
-						id: "folder-1-b-c",
-						folders: [],
-					},
-				],
-			},
-			{
-				name: "Folder 1 C",
-				id: "folder-1-c",
-				folders: [],
-			},
-		],
-	},
-	{
-		name: "Folder 2",
-		id: "folder-2",
-		folders: [],
-	},
-	{
-		name: "Folder 3",
-		id: "folder-3",
-		folders: [],
-	},
-	{
-		name: "Folder 4",
-		id: "folder-4",
-		folders: [],
-	},
-	{
-		name: "Folder 5",
-		id: "folder-5",
-		folders: [],
-	},
-	{
-		name: "Folder 6",
-		id: "folder-6",
-		folders: [],
-	},
-];
-
 export const FolderMenu = ({
-	folders = SAMPLE_FOLDERS,
+	folders,
 	isMinimised = false,
 }: {
-	folders?: Folder[];
+	folders: Folder[] | null;
 	isMinimised?: boolean;
 }) => {
 	const [search, setSearch] = useState("");
@@ -92,6 +32,8 @@ export const FolderMenu = ({
 
 	// Build ID lookup map and parent map once - O(1) folder access instead of O(n) tree traversal
 	const { folderMap, parentMap } = useMemo(() => {
+		if (!folders) return { folderMap: new Map(), parentMap: new Map() };
+
 		const fMap = new Map<string, Folder>();
 		const pMap = new Map<string, string>(); // child ID -> parent ID
 
@@ -128,7 +70,10 @@ export const FolderMenu = ({
 	};
 
 	// Memoize flattened folders - only recalculates when folders array changes
-	const flattenedFolders = useMemo(() => flattenFolders(folders), [folders]);
+	const flattenedFolders = useMemo(
+		() => (folders ? flattenFolders(folders) : []),
+		[folders],
+	);
 
 	// Get current folder based on navigation stack - O(1) lookup instead of O(n) traversal
 	const currentFolder = useMemo(
@@ -141,7 +86,7 @@ export const FolderMenu = ({
 
 	// Get current folders to display - memoized to prevent unnecessary re-renders
 	const currentFolders = useMemo(
-		() => (currentFolder ? currentFolder.folders : folders),
+		() => (currentFolder ? currentFolder.folders : (folders ?? [])),
 		[currentFolder, folders],
 	);
 
@@ -202,6 +147,15 @@ export const FolderMenu = ({
 			listRef.current.scrollTop = 0;
 		}
 	}, [isMinimised]);
+
+	// Show loading state while folders are being fetched
+	if (folders === null) {
+		return (
+			<div className="flex flex-1 items-center justify-center">
+				<Loader2 className="animate-spin text-muted-foreground" size={24} />
+			</div>
+		);
+	}
 
 	return (
 		<div className="command-bar flex flex-col flex-1 min-h-0">

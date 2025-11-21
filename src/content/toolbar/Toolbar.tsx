@@ -1,4 +1,9 @@
-import { Camera, ExternalLink, Folder, GripVertical } from "lucide-react";
+import {
+	Camera,
+	ExternalLink,
+	Folder as FolderIcon,
+	GripVertical,
+} from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +18,39 @@ import {
 	getToolbarSize,
 } from "@/lib/helpers";
 import { cn } from "@/lib/utils";
-import type { Corner } from "@/types";
+import type { Corner, Folder } from "@/types";
+
+// Mock data - will be replaced with API call
+const MOCK_FOLDERS: Folder[] = [
+	{
+		name: "Folder 1",
+		id: "folder-1",
+		folders: [
+			{ name: "Folder 1 A", id: "folder-1-a", folders: [] },
+			{
+				name: "Folder 1 B",
+				id: "folder-1-b",
+				folders: [
+					{ name: "Folder 1 B A", id: "folder-1-b-a", folders: [] },
+					{ name: "Folder 1 B B", id: "folder-1-b-b", folders: [] },
+					{ name: "Folder 1 B C", id: "folder-1-b-c", folders: [] },
+				],
+			},
+			{ name: "Folder 1 C", id: "folder-1-c", folders: [] },
+		],
+	},
+	{ name: "Folder 2", id: "folder-2", folders: [] },
+	{ name: "Folder 3", id: "folder-3", folders: [] },
+	{ name: "Folder 4", id: "folder-4", folders: [] },
+	{ name: "Folder 5", id: "folder-5", folders: [] },
+	{ name: "Folder 6", id: "folder-6", folders: [] },
+];
+
+// Mock API function - replace with real API call
+const fetchFolders = async (): Promise<Folder[]> => {
+	await new Promise((resolve) => setTimeout(resolve, 2000));
+	return MOCK_FOLDERS;
+};
 
 interface ToolbarProps {
 	initialCorner: Corner;
@@ -30,6 +67,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	const corner = useRef<Corner>(initialCorner);
 
 	const [isMinimised, setIsMinimised] = useState(true);
+	const [folders, setFolders] = useState<Folder[] | null>(null);
+
+	// Fetch folders on mount
+	useEffect(() => {
+		fetchFolders().then(setFolders);
+	}, []);
 
 	const toggleFolders = () => {
 		if (!toolbarRef.current) return;
@@ -143,7 +186,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		>
 			<div className="flex flex-1 flex-col bg-background rounded-md overflow-hidden">
 				<div className="flex flex-1 flex-col overflow-hidden">
-					<FolderMenu isMinimised={isMinimised} />
+					<FolderMenu folders={folders} isMinimised={isMinimised} />
 					<Separator />
 				</div>
 				<div className="flex flex-1 max-h-9 min-h-9 overflow-hidden">
@@ -156,7 +199,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 							<Camera />
 						</Button>
 						<Button variant="ghost" size="icon" onClick={toggleFolders}>
-							<Folder />
+							<FolderIcon />
 						</Button>
 						<Button variant="ghost" size="icon" className="rounded-r-none">
 							<ExternalLink />
