@@ -16,6 +16,7 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { flattenFolders } from "@/lib/helpers";
+import { cn } from "@/lib/utils";
 import type { FlattenedFolder, Folder } from "@/types";
 
 export const FolderMenu = ({
@@ -158,7 +159,12 @@ export const FolderMenu = ({
 	}
 
 	return (
-		<div className="command-bar flex flex-col flex-1 min-h-0">
+		<div
+			className={cn(
+				"command-bar flex flex-col flex-1 min-h-0 transition-opacity duration-300",
+				isMinimised ? "opacity-0" : "opacity-100",
+			)}
+		>
 			<Command
 				onKeyDown={(e) => {
 					if (e.key === "Escape") {

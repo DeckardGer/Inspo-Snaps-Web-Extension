@@ -14,12 +14,15 @@ const getSiteState = async (): Promise<boolean> => {
 	const hostname = window.location.hostname;
 	const stored = await browser.storage.local.get(ENABLED_SITES_KEY);
 	const sites = (stored[ENABLED_SITES_KEY] as Record<string, boolean>) || {};
+
 	return sites[hostname] || false;
 };
 
 const loadToolbarCorner = async (): Promise<Corner> => {
 	const stored = await browser.storage.local.get(TOOLBAR_CORNER_KEY);
-	return (stored[TOOLBAR_CORNER_KEY] as Corner) || "bottom-right";
+	const corner = (stored[TOOLBAR_CORNER_KEY] as Corner) || "bottom-right";
+
+	return corner;
 };
 
 export const saveToolbarCorner = async (corner: Corner): Promise<void> => {

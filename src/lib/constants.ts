@@ -7,3 +7,5 @@ export const MAXIMISED_HEIGHT = 415;
 export const TOOLBAR_CORNER_KEY = "toolbarCorner";
 export const ENABLED_SITES_KEY = "enabledSites";
 export const WEBSITE_URL = "https://insposnaps.com";
+export const TOOLBAR_TRANSITION_DURATION = "0.3s";
+export const TOOLBAR_TIMING_FUNCTION = "cubic-bezier(0.4, 0, 0.2, 1)";
