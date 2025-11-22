@@ -117,8 +117,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		toolbarRef.current.style.transition = "none";
 	};
 
-	console.log("Toolbar mounted", initialCorner);
-
 	useEffect(() => {
 		// Set initial position
 		if (toolbarRef.current) {

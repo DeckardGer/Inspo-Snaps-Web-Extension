@@ -61,10 +61,10 @@ export const ImageSnapper = ({ isInspecting }: ImageSnapperProps) => {
 			const rect = refCurrentRect.current;
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-			ctx.strokeStyle = "rgba(142, 97, 227, 0.5)";
-			ctx.fillStyle = "rgba(173, 97, 230, 0.10)";
+			ctx.strokeStyle = "rgba(142, 97, 227, 1)";
+			ctx.fillStyle = "rgba(173, 97, 230, 0.2)";
 			ctx.setLineDash([4]);
-			ctx.lineWidth = 1;
+			ctx.lineWidth = 3;
 
 			ctx.fillRect(rect.left, rect.top, rect.width, rect.height);
 			ctx.strokeRect(rect.left, rect.top, rect.width, rect.height);
@@ -210,21 +210,27 @@ export const ImageSnapper = ({ isInspecting }: ImageSnapperProps) => {
 			// Temporarily disable pointer-events to "see through" the canvas
 			canvas.style.pointerEvents = "none";
 			const element = document.elementFromPoint(e.clientX, e.clientY);
-			canvas.style.pointerEvents = "auto";
+			canvas.style.removeProperty("pointer-events");
 
 			clearTimeout(refTimeout.current);
 
-			if (element && element !== refShadowHost.current) {
+			// Only highlight img elements, preserve last highlight when not over an image
+			if (
+				element &&
+				element !== refShadowHost.current &&
+				element.tagName === "IMG"
+			) {
 				// Skip if it's the same element
 				if (element === refLastHoveredElement.current) return;
 
 				refLastHoveredElement.current = element;
 				startFadeIn();
 				drawHoverOverlay(element);
-			} else {
-				// Mouse is not over a valid element
-				if (!refCurrentRect.current || refIsFadingOut.current) return;
-				startFadeOut();
+				// Don't fade out when moving away - preserve the last highlighted image
+				// } else {
+				// 	// Mouse is not over a valid element
+				// 	if (!refCurrentRect.current || refIsFadingOut.current) return;
+				// 	startFadeOut();
 			}
 		}, 32);
 
@@ -240,10 +246,25 @@ export const ImageSnapper = ({ isInspecting }: ImageSnapperProps) => {
 			}
 		};
 
+		const handleClick = (e: MouseEvent) => {
+			// Temporarily disable pointer-events to "see through" the canvas
+			canvas.style.pointerEvents = "none";
+			const element = document.elementFromPoint(e.clientX, e.clientY);
+			canvas.style.pointerEvents = "";
+
+			if (!element) return;
+
+			// Check if it's an image element
+			if (element.tagName === "IMG") {
+				console.log("Image clicked:", element);
+			}
+		};
+
 		document.addEventListener("pointermove", handlePointerMove, {
 			passive: true,
 			capture: true,
 		});
+		document.addEventListener("click", handleClick, { capture: true });
 		window.addEventListener("scroll", handleResizeOrScroll, { passive: true });
 		window.addEventListener("resize", handleResizeOrScroll, { passive: true });
 
@@ -251,6 +272,7 @@ export const ImageSnapper = ({ isInspecting }: ImageSnapperProps) => {
 			document.removeEventListener("pointermove", handlePointerMove, {
 				capture: true,
 			});
+			document.removeEventListener("click", handleClick, { capture: true });
 			window.removeEventListener("scroll", handleResizeOrScroll);
 			window.removeEventListener("resize", handleResizeOrScroll);
 
