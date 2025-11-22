@@ -163,3 +163,26 @@ export function flattenFolders(
 
 	return result;
 }
+
+// Linear interpolation between two values
+export const lerp = (start: number, end: number, t: number): number => {
+	return start + (end - start) * t;
+};
+
+export const throttle = <E>(
+	callback: (e?: E) => void,
+	delay: number,
+): ((e?: E) => void) => {
+	let lastCall = 0;
+
+	return (e?: E) => {
+		const now = Date.now();
+
+		if (now - lastCall >= delay) {
+			lastCall = now;
+			return callback(e);
+		}
+
+		return undefined;
+	};
+};

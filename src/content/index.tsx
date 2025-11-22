@@ -1,7 +1,11 @@
 import ReactDOM from "react-dom/client";
 import browser from "webextension-polyfill";
 import { Toolbar } from "@/content/toolbar/Toolbar";
-import { ENABLED_SITES_KEY, TOOLBAR_CORNER_KEY } from "@/lib/constants";
+import {
+	ENABLED_SITES_KEY,
+	extensionShort,
+	TOOLBAR_CORNER_KEY,
+} from "@/lib/constants";
 import { normaliseTailwind } from "@/lib/utils";
 import styles from "@/styles.css?inline";
 import { type Corner, type Message, MessageType } from "@/types";
@@ -36,7 +40,7 @@ const showToolbar = async () => {
 
 	// Create shadow host
 	rootContainer = document.createElement("div");
-	rootContainer.id = "inspo-snaps-toolbar-root";
+	rootContainer.id = `${extensionShort}-toolbar-root`;
 
 	// Attach shadow DOM for style isolation
 	const shadowRoot = rootContainer.attachShadow({ mode: "open" });
@@ -48,7 +52,7 @@ const showToolbar = async () => {
 
 	// Create React mount point
 	const mountPoint = document.createElement("div");
-	mountPoint.id = "inspo-snaps-toolbar";
+	mountPoint.id = `${extensionShort}-toolbar`;
 	shadowRoot.appendChild(mountPoint);
 
 	document.documentElement.appendChild(rootContainer);

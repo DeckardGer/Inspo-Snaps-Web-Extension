@@ -13,6 +13,8 @@ import { saveToolbarCorner } from "@/content/index";
 import { FolderMenu } from "@/content/toolbar/FolderMenu";
 import { ImageSnapper } from "@/content/toolbar/ImageSnapper";
 import {
+	MINIMISED_HEIGHT,
+	MINIMISED_WIDTH,
 	SAFE_ZONE,
 	TOOLBAR_TIMING_FUNCTION,
 	TOOLBAR_TRANSITION_DURATION,
@@ -72,6 +74,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	const corner = useRef<Corner>(initialCorner);
 
 	const [isMinimised, setIsMinimised] = useState(true);
+	const [isInspecting, setIsInspecting] = useState(false);
 	const [folders, setFolders] = useState<Folder[] | null>(null);
 
 	// Fetch folders on mount
@@ -113,6 +116,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		if (!toolbarRef.current) return;
 		toolbarRef.current.style.transition = "none";
 	};
+
+	console.log("Toolbar mounted", initialCorner);
 
 	useEffect(() => {
 		// Set initial position
@@ -182,7 +187,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 
 	return (
 		<>
-			<ImageSnapper />
+			<ImageSnapper isInspecting={isInspecting} />
 			<div
 				ref={toolbarRef}
 				className="flex fixed inset-0 select-none touch-none opacity-0 shadow-2xl animate-fade-in z-999999999 backdrop-blur-sm rounded-[7px] border border-border-outside"
@@ -191,6 +196,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 					maxWidth: `calc(100vw - ${SAFE_ZONE * 2}px)`,
 					height: getToolbarSize(isMinimised).height,
 					maxHeight: `calc(100vh - ${SAFE_ZONE * 2}px)`,
+					transform: `translate(-${MINIMISED_WIDTH}px, -${MINIMISED_HEIGHT}px)`,
 				}}
 			>
 				<div className="flex flex-1 flex-col bg-background rounded-md overflow-hidden">
@@ -204,6 +210,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 								variant="ghost"
 								size="icon"
 								className={isMinimised ? "" : "rounded-tl-none"}
+								onClick={() => setIsInspecting(!isInspecting)}
 							>
 								<Camera />
 							</Button>

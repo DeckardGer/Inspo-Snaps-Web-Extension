@@ -141,6 +141,15 @@
 }
 
 @layer components {
+	/* Canvas overlay fade transitions */
+	.fade-in {
+		opacity: 1 !important;
+	}
+
+	.fade-out {
+		opacity: 0 !important;
+	}
+
 	.command-bar [cmdk-root] {
 		display: flex;
 		flex-direction: column;

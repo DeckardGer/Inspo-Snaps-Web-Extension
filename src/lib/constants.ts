@@ -1,4 +1,5 @@
 export const extensionName = "Inspo Snaps";
+export const extensionShort = "inspo-snaps";
 export const SAFE_ZONE = 24;
 export const MINIMISED_WIDTH = 170;
 export const MINIMISED_HEIGHT = 38;
