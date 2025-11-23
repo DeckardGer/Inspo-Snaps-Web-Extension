@@ -66,8 +66,8 @@ export const ImageSnapper = ({
 			const rect = refCurrentRect.current;
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-			ctx.strokeStyle = "rgba(142, 97, 227, 1)";
-			ctx.fillStyle = "rgba(173, 97, 230, 0.2)";
+			ctx.strokeStyle = "oklch(60.6% 0.25 292.717)";
+			ctx.fillStyle = "oklch(70.2% 0.183 293.541 / 20%)";
 			ctx.setLineDash([4]);
 			ctx.lineWidth = 3;
 

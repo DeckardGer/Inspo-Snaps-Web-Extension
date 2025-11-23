@@ -13,6 +13,7 @@ import { saveToolbarCorner } from "@/content/index";
 import { CapturedThumbnails } from "@/content/toolbar/CapturedThumbnails";
 import { FlyingImage } from "@/content/toolbar/FlyingImage";
 import { FolderMenu } from "@/content/toolbar/FolderMenu";
+import { ImagePreviewPanel } from "@/content/toolbar/ImagePreviewPanel";
 import { ImageSnapper } from "@/content/toolbar/ImageSnapper";
 import {
 	MAXIMISED_WIDTH,
@@ -89,6 +90,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	const [folders, setFolders] = useState<Folder[] | null>(null);
 	const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([]);
 	const [flyingImages, setFlyingImages] = useState<FlyingImageData[]>([]);
+	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
 	const handleImageCapture = useCallback(
 		(data: ImageCaptureData) => {
@@ -127,6 +129,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 
 		// Remove from flying images
 		setFlyingImages((prev) => prev.filter((img) => img.id !== id));
+	};
+
+	const handleThumbnailClick = () => {
+		setIsPreviewOpen(true);
+	};
+
+	const handlePreviewClose = () => {
+		setIsPreviewOpen(false);
+	};
+
+	const handleRemoveLatestImage = () => {
+		setCapturedImages((prev) => prev.slice(0, -1));
 	};
 
 	const openWebsite = () => {
@@ -267,6 +281,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 						<FolderMenu folders={folders} isMinimised={isMinimised} />
 						<Separator />
 					</div>
+					{/* Image preview panel - visible when viewing images */}
+					{isPreviewOpen && capturedImages.length > 0 && (
+						<ImagePreviewPanel
+							images={capturedImages}
+							onClose={handlePreviewClose}
+						/>
+					)}
 					{/* Floating thumbnail - visible when maximised with captured images */}
 					{!isMinimised && capturedImages.length > 0 && (
 						<div
@@ -280,7 +301,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 								bottom: MINIMISED_HEIGHT + THUMBNAIL_TOOLBAR_PADDING - 1,
 							}}
 						>
-							<CapturedThumbnails images={capturedImages} />
+							<CapturedThumbnails
+								images={capturedImages}
+								onClick={handleThumbnailClick}
+								onRemove={handleRemoveLatestImage}
+							/>
 						</div>
 					)}
 					<div className="flex flex-1 max-h-9 min-h-9 overflow-hidden">
@@ -288,7 +313,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 							<Button
 								variant="ghost"
 								size="icon"
-								className={isMinimised ? "" : "rounded-tl-none"}
+								className={cn(
+									isMinimised && "rounded-tl-none",
+									isInspecting && "text-primary hover:text-primary",
+								)}
 								onClick={() => setIsInspecting(!isInspecting)}
 							>
 								<Camera />
