@@ -35,3 +35,17 @@ browser.action.onClicked.addListener(async (tab) => {
 		payload: newState,
 	});
 });
+
+// Setup context menus
+browser.contextMenus.create({
+	id: "save-image",
+	title: "Save Image",
+	contexts: ["image"],
+});
+
+browser.contextMenus.onClicked.addListener((info) => {
+	if (info.menuItemId === "save-image" && info.srcUrl) {
+		// TODO: Implement image saving
+		console.log("Save image:", info.srcUrl);
+	}
+});
