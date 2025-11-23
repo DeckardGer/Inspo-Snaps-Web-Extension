@@ -37,17 +37,19 @@
 	--color-input: var(--input);
 	--color-ring: var(--ring);
 
-	/* Line Heights */
-	--leading-3: 12px;
-	--leading-4: 16px;
-	--leading-5: 20px;
-	--leading-6: 24px;
-	--leading-7: 28px;
-	--leading-8: 32px;
-	--leading-9: 36px;
-	--leading-10: 40px;
-
 	--spacing: calc(0.25 * var(--hem));
+
+	/* Line Heights */
+	--leading-1: calc(0.25 * var(--hem));
+	--leading-2: calc(0.5 * var(--hem));
+	--leading-3: calc(0.75 * var(--hem));
+	--leading-4: calc(1 * var(--hem));
+	--leading-5: calc(1.25 * var(--hem));
+	--leading-6: calc(1.5 * var(--hem));
+	--leading-7: calc(1.75 * var(--hem));
+	--leading-8: calc(2 * var(--hem));
+	--leading-9: calc(2.25 * var(--hem));
+	--leading-10: calc(2.5 * var(--hem));
 
 	/* Font size */
 	--text-xs: calc(0.75 * var(--hem));
