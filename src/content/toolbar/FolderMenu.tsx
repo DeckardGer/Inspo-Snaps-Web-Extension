@@ -6,7 +6,7 @@ import {
 	Loader2,
 	Plus,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -19,13 +19,13 @@ import { flattenFolders } from "@/lib/helpers";
 import { cn } from "@/lib/utils";
 import type { FlattenedFolder, Folder } from "@/types";
 
-export const FolderMenu = ({
+export const FolderMenu = memo(function FolderMenu({
 	folders,
 	isMinimised = false,
 }: {
 	folders: Folder[] | null;
 	isMinimised?: boolean;
-}) => {
+}) {
 	const [search, setSearch] = useState("");
 	const [pages, setPages] = useState<string[]>([]); // Stack of folder IDs
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -237,7 +237,7 @@ export const FolderMenu = ({
 			</Command>
 		</div>
 	);
-};
+});
 
 // SearchView: Shows all folders (flattened) when searching
 function SearchView({

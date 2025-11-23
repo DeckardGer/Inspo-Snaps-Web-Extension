@@ -4,10 +4,12 @@ import {
 	MINIMISED_HEIGHT,
 	MINIMISED_WIDTH,
 	SAFE_ZONE,
+	THUMBNAIL_SIZE,
+	THUMBNAIL_TOOLBAR_PADDING,
 } from "@/lib/constants";
 import type { Corner, FlattenedFolder, Folder } from "@/types";
 
-// Get the toolbar size based on whether it is minimised or maximised
+// Get the toolbar size based on whether it is minimised
 export const getToolbarSize = (isMinimised: boolean) => {
 	if (isMinimised) {
 		return {
@@ -185,4 +187,38 @@ export const throttle = <E>(
 
 		return undefined;
 	};
+};
+
+// Ease-out cubic for smooth deceleration
+export const easeOutCubic = (t: number): number => {
+	return 1 - (1 - t) ** 3;
+};
+
+// Calculate the target position for a flying thumbnail relative to toolbar
+// The thumbnail floats in the bottom-right corner of the toolbar, above the button row
+export const getThumbnailTargetPosition = (
+	corner: Corner,
+): { x: number; y: number } => {
+	// Get toolbar's final position when maximised
+	const toolbarPos = calculatePosition(
+		corner,
+		MAXIMISED_WIDTH,
+		MAXIMISED_HEIGHT,
+	);
+
+	// Calculate position: bottom-right corner, above button row
+	const x =
+		toolbarPos.x +
+		MAXIMISED_WIDTH -
+		THUMBNAIL_SIZE -
+		THUMBNAIL_TOOLBAR_PADDING -
+		1;
+	const y =
+		toolbarPos.y +
+		MAXIMISED_HEIGHT -
+		MINIMISED_HEIGHT -
+		THUMBNAIL_TOOLBAR_PADDING -
+		THUMBNAIL_SIZE;
+
+	return { x, y };
 };

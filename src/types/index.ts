@@ -22,3 +22,17 @@ export type FlattenedFolder = {
 	path: string[];
 	depth: number;
 };
+
+export type CapturedImage = {
+	id: string;
+	src: string;
+};
+
+export type ImageCaptureData = {
+	src: string;
+	rect: DOMRect;
+};
+
+export type FlyingImageData = ImageCaptureData & {
+	id: string;
+};

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { lerp, throttle } from "@/lib/helpers";
 import { cn } from "@/lib/utils";
+import type { ImageCaptureData } from "@/types";
 
 interface Rect {
 	left: number;
@@ -18,9 +19,13 @@ const ANIMATION_CONFIG = {
 
 interface ImageSnapperProps {
 	isInspecting: boolean;
+	onImageCapture: (data: ImageCaptureData) => void;
 }
 
-export const ImageSnapper = ({ isInspecting }: ImageSnapperProps) => {
+export const ImageSnapper = ({
+	isInspecting,
+	onImageCapture,
+}: ImageSnapperProps) => {
 	const refCanvas = useRef<HTMLCanvasElement>(null);
 	const refShadowHost = useRef<Element | null>(null);
 	const refCurrentRect = useRef<Rect | null>(null);
@@ -204,6 +209,12 @@ export const ImageSnapper = ({ isInspecting }: ImageSnapperProps) => {
 			return;
 		}
 
+		// Redraw existing rectangle if we have one (e.g., after effect re-runs due to onImageCapture change)
+		if (refCurrentRect.current) {
+			startFadeIn();
+			drawRect();
+		}
+
 		const handlePointerMove = throttle((e?: PointerEvent) => {
 			if (!e) return;
 
@@ -256,7 +267,13 @@ export const ImageSnapper = ({ isInspecting }: ImageSnapperProps) => {
 
 			// Check if it's an image element
 			if (element.tagName === "IMG") {
-				console.log("Image clicked:", element);
+				const imgElement = element as HTMLImageElement;
+				const rect = imgElement.getBoundingClientRect();
+
+				onImageCapture({
+					src: imgElement.src,
+					rect,
+				});
 			}
 		};
 
@@ -281,7 +298,7 @@ export const ImageSnapper = ({ isInspecting }: ImageSnapperProps) => {
 			}
 			clearTimeout(refTimeout.current);
 		};
-	}, [isInspecting]);
+	}, [isInspecting, onImageCapture]);
 
 	return (
 		<canvas
