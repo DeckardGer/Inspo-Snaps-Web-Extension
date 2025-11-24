@@ -1,6 +1,15 @@
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useState } from "react";
+import { X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+	Carousel,
+	type CarouselApi,
+	CarouselContent,
+	CarouselItem,
+	CarouselNext,
+	CarouselPrevious,
+} from "@/components/ui/carousel";
+import { cn } from "@/lib/utils";
 import type { CapturedImage } from "@/types";
 
 interface ImagePreviewPanelProps {
@@ -9,81 +18,71 @@ interface ImagePreviewPanelProps {
 }
 
 export function ImagePreviewPanel({ images, onClose }: ImagePreviewPanelProps) {
-	const [viewingIndex, setViewingIndex] = useState(images.length - 1);
+	const [api, setApi] = useState<CarouselApi>();
+	const [isClosing, setIsClosing] = useState(false);
 
-	const currentImage = images[viewingIndex];
-	const canGoPrev = viewingIndex > 0;
-	const canGoNext = viewingIndex < images.length - 1;
-	const hasMultiple = images.length > 1;
+	const handleClose = useCallback(() => {
+		if (isClosing) return;
+		setIsClosing(true);
+		setTimeout(onClose, 200); // Match fade-out duration
+	}, [isClosing, onClose]);
 
-	const handleNavigate = (direction: "prev" | "next") => {
-		setViewingIndex((prev) => {
-			if (direction === "prev") {
-				return Math.max(0, prev - 1);
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape" || e.key === "Backspace") {
+				handleClose();
+			} else if (e.key === "ArrowLeft") {
+				api?.scrollPrev();
+			} else if (e.key === "ArrowRight") {
+				api?.scrollNext();
 			}
-			return Math.min(images.length - 1, prev + 1);
-		});
-	};
+		};
 
-	const handleBackdropClick = (e: React.MouseEvent) => {
-		// Only close if clicking the backdrop itself, not the image or buttons
-		if (e.target === e.currentTarget) {
-			onClose();
-		}
-	};
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [api, handleClose]);
 
 	return (
 		<div
-			className="absolute inset-0 bottom-9 z-20 bg-background/80 backdrop-blur-sm flex items-center justify-center animate-fade-in rounded-t-md overflow-hidden"
-			onClick={handleBackdropClick}
+			role="dialog"
+			aria-modal="true"
+			aria-label="Image preview"
+			className={cn(
+				"absolute inset-0 z-20 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-md overflow-hidden",
+				isClosing ? "animate-fade-out" : "animate-fade-in",
+			)}
 		>
 			{/* Close button */}
 			<Button
 				variant="ghost"
 				size="icon"
-				className="absolute top-1 right-1 z-10 h-7 w-7"
-				onClick={onClose}
+				className="absolute top-2 right-2 z-10 h-9 w-9"
+				onClick={handleClose}
 			>
-				<X size={16} />
+				<X />
 			</Button>
 
-			{/* Navigation arrows */}
-			{hasMultiple && (
-				<>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="absolute left-1 z-10 h-8 w-8"
-						onClick={() => handleNavigate("prev")}
-						disabled={!canGoPrev}
-					>
-						<ChevronLeft size={20} />
-					</Button>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="absolute right-1 z-10 h-8 w-8"
-						onClick={() => handleNavigate("next")}
-						disabled={!canGoNext}
-					>
-						<ChevronRight size={20} />
-					</Button>
-				</>
-			)}
-
-			{/* Image */}
-			<img
-				src={currentImage.src}
-				alt=""
-				className="max-w-[calc(100%-4rem)] max-h-[calc(100%-2rem)] object-contain rounded-md shadow-lg"
-			/>
-
-			{/* Image counter */}
-			{hasMultiple && (
-				<div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-muted-foreground font-mono tabular-nums">
-					{viewingIndex + 1} / {images.length}
-				</div>
-			)}
+			<Carousel
+				setApi={setApi}
+				className="w-full max-w-[calc(100%-8rem)] h-full max-h-[calc(100%-4rem)]"
+			>
+				<CarouselContent className="h-full">
+					{images.map((image) => (
+						<CarouselItem
+							key={image.id}
+							className="flex items-center justify-center h-full"
+						>
+							<img
+								src={image.src}
+								alt=""
+								className="w-auto h-auto max-w-full max-h-full rounded-md shadow-lg"
+							/>
+						</CarouselItem>
+					))}
+				</CarouselContent>
+				<CarouselPrevious className="rounded-md" />
+				<CarouselNext className="rounded-md" />
+			</Carousel>
 		</div>
 	);
 }

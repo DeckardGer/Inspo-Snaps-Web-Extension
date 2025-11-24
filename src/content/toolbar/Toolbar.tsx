@@ -314,7 +314,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 								variant="ghost"
 								size="icon"
 								className={cn(
-									isMinimised && "rounded-tl-none",
+									!isMinimised && "rounded-tl-none",
 									isInspecting && "text-primary hover:text-primary",
 								)}
 								onClick={() => setIsInspecting(!isInspecting)}
@@ -338,7 +338,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 							size="icon"
 							className={cn(
 								"ml-auto w-6 rounded-l-none cursor-grab active:cursor-grabbing",
-								isMinimised ? "" : "rounded-tr-none",
+								!isMinimised && "rounded-tr-none",
 							)}
 							onMouseDown={handleMouseDown}
 							aria-label="Drag toolbar"
