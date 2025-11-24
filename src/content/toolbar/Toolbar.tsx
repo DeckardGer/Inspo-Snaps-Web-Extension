@@ -65,10 +65,20 @@ const MOCK_FOLDERS: Folder[] = [
 	{ name: "Folder 6", id: "folder-6", folders: [] },
 ];
 
-// Mock API function - replace with real API call
+// TODO: Remove - Mock API function - replace with real API call
 const fetchFolders = async (): Promise<Folder[]> => {
 	await new Promise((resolve) => setTimeout(resolve, 2000));
 	return MOCK_FOLDERS;
+};
+
+// TODO: Remove - Mock API function - replace with real API call
+const createFolderApi = async (name: string, _parentId: string | null): Promise<Folder> => {
+	await new Promise((resolve) => setTimeout(resolve, 500));
+	return {
+		id: `folder-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+		name,
+		folders: [],
+	};
 };
 
 interface ToolbarProps {
@@ -153,6 +163,45 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 
 			return updated;
 		});
+	};
+
+	const handleCreateFolder = async (
+		name: string,
+		parentId: string | null,
+	): Promise<string> => {
+		const newFolder = await createFolderApi(name, parentId);
+
+		setFolders((prev) => {
+			if (!prev) return [newFolder];
+
+			if (parentId === null) {
+				// Add to root level
+				return [...prev, newFolder];
+			}
+
+			// Recursively find parent and add the new folder
+			const addToParent = (folders: Folder[]): Folder[] => {
+				return folders.map((folder) => {
+					if (folder.id === parentId) {
+						return {
+							...folder,
+							folders: [...folder.folders, newFolder],
+						};
+					}
+					if (folder.folders.length > 0) {
+						return {
+							...folder,
+							folders: addToParent(folder.folders),
+						};
+					}
+					return folder;
+				});
+			};
+
+			return addToParent(prev);
+		});
+
+		return newFolder.id;
 	};
 
 	const openWebsite = () => {
@@ -302,7 +351,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 			>
 				<div className="flex flex-1 flex-col bg-background rounded-md overflow-hidden relative">
 					<div className="flex flex-1 flex-col overflow-hidden">
-						<FolderMenu folders={folders} isMinimised={isMinimised} />
+						<FolderMenu
+							folders={folders}
+							isMinimised={isMinimised}
+							onCreateFolder={handleCreateFolder}
+						/>
 						<Separator />
 					</div>
 					{/* Image preview panel - visible when viewing images */}

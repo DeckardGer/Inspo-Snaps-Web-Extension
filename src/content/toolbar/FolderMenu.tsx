@@ -1,5 +1,6 @@
 import { Command } from "cmdk";
 import {
+	ArrowLeft,
 	ChevronRight,
 	Folder as FolderIcon,
 	Home,
@@ -15,6 +16,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
 import { flattenFolders } from "@/lib/helpers";
 import { cn } from "@/lib/utils";
 import type { FlattenedFolder, Folder } from "@/types";
@@ -22,12 +24,16 @@ import type { FlattenedFolder, Folder } from "@/types";
 export const FolderMenu = memo(function FolderMenu({
 	folders,
 	isMinimised = false,
+	onCreateFolder,
 }: {
 	folders: Folder[] | null;
 	isMinimised?: boolean;
+	onCreateFolder?: (name: string, parentId: string | null) => Promise<string>;
 }) {
 	const [search, setSearch] = useState("");
 	const [pages, setPages] = useState<string[]>([]); // Stack of folder IDs
+	const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const listRef = useRef<HTMLDivElement>(null);
 
@@ -132,10 +138,60 @@ export const FolderMenu = memo(function FolderMenu({
 			setPages((prev) => prev.slice(0, index + 1));
 		}
 
+		// Exit creating folder mode if active
+		if (isCreatingFolder) {
+			setIsCreatingFolder(false);
+		}
+		setSearch("");
+
 		// Refocus input after navigation
 		setTimeout(() => {
 			inputRef.current?.focus();
 		}, 0);
+	};
+
+	// Prepare to add a new folder - sets state and focuses input
+	const handlePrepareAddFolder = () => {
+		setIsCreatingFolder(true);
+		setSearch("");
+		setTimeout(() => {
+			inputRef.current?.focus();
+		}, 0);
+	};
+
+	const handleBack = () => {
+		setIsCreatingFolder(false);
+		setSearch("");
+		setTimeout(() => {
+			inputRef.current?.focus();
+		}, 0);
+	};
+
+	// Create the new folder
+	const handleCreateFolder = async () => {
+		if (!search.trim() || !onCreateFolder || isSaving) return;
+
+		// Get the parent folder ID (null if at root)
+		const parentId = pages.length > 0 ? pages[pages.length - 1] : null;
+
+		setIsSaving(true);
+
+		try {
+			// Call API and get the new folder ID
+			const newFolderId = await onCreateFolder(search.trim(), parentId);
+
+			// Navigate to the new folder
+			setPages((prev) => [...prev, newFolderId]);
+
+			// Reset state after creation
+			setIsCreatingFolder(false);
+			setSearch("");
+			setTimeout(() => {
+				inputRef.current?.focus();
+			}, 0);
+		} finally {
+			setIsSaving(false);
+		}
 	};
 
 	// Focus input when maximized
@@ -167,31 +223,64 @@ export const FolderMenu = memo(function FolderMenu({
 		>
 			<Command
 				onKeyDown={(e) => {
-					if (e.key === "Escape") {
+					// Handle Enter to create folder
+					if (e.key === "Enter" && isCreatingFolder && search.trim()) {
 						e.preventDefault();
-						if (search) {
-							setSearch("");
-						} else {
-							setPages((pages) => pages.slice(0, -1));
-						}
-					} else if (e.key === "Backspace" && !search) {
-						e.preventDefault();
+						handleCreateFolder();
+						return;
+					}
+
+					const isEscape = e.key === "Escape";
+					const isBackspaceWithoutSearch = e.key === "Backspace" && !search;
+					if (!isEscape && !isBackspaceWithoutSearch) return;
+
+					e.preventDefault();
+					if (isEscape && search) {
+						setSearch("");
+					} else if (isCreatingFolder) {
+						handleBack();
+					} else {
 						setPages((pages) => pages.slice(0, -1));
 					}
 				}}
 			>
-				<Command.Input
-					ref={inputRef}
-					value={search}
-					onValueChange={setSearch}
-					placeholder="Search Folders..."
-				/>
-				{search.length === 0 && (
+				<div className="flex items-center border-b border-border">
+					{isCreatingFolder && (
+						<Button
+							variant="ghost"
+							size="icon"
+							className="w-7 h-7 ml-[9px]"
+							onClick={handleBack}
+						>
+							<ArrowLeft size={14} />
+						</Button>
+					)}
+					<Command.Input
+						ref={inputRef}
+						value={search}
+						onValueChange={setSearch}
+						placeholder={
+							isCreatingFolder ? "New folder name..." : "Search Folders..."
+						}
+						className={cn("border-b-0", isCreatingFolder && "pl-[9px]")}
+					/>
+					{isSaving && (
+						<Loader2
+							className="animate-spin text-muted-foreground mr-3"
+							size={16}
+						/>
+					)}
+				</div>
+				{(search.length === 0 || isCreatingFolder) && (
 					<div className="px-4 py-3 border-b border-border">
 						<Breadcrumb>
 							<BreadcrumbList>
 								{breadcrumbPath.map((item, idx) => {
-									const isLast = idx === breadcrumbPath.length - 1;
+									// When creating folder with text, no existing item is "last" - the new folder name will be
+									const isCreatingWithText =
+										isCreatingFolder && search.length > 0;
+									const isLast =
+										!isCreatingWithText && idx === breadcrumbPath.length - 1;
 									const isHome = item.index === -1;
 
 									return (
@@ -216,22 +305,38 @@ export const FolderMenu = memo(function FolderMenu({
 										</div>
 									);
 								})}
+								{isCreatingFolder && search.length > 0 && (
+									<BreadcrumbItem>
+										<BreadcrumbPage className="flex items-center gap-1.5">
+											{search}
+										</BreadcrumbPage>
+									</BreadcrumbItem>
+								)}
 							</BreadcrumbList>
 						</Breadcrumb>
 					</div>
 				)}
 				<Command.List ref={listRef}>
-					<Command.Empty>No folders found.</Command.Empty>
+					{!isCreatingFolder && (
+						<>
+							<Command.Empty>No folders found.</Command.Empty>
 
-					{search ? (
-						// Search mode: Show all folders (flattened)
-						<SearchView
-							flattenedFolders={flattenedFolders}
-							onSelect={navigateToFolder}
-						/>
-					) : (
-						// Normal mode: Show current folder's contents
-						<FoldersView folders={currentFolders} onSelect={navigateToFolder} />
+							{search ? (
+								// Search mode: Show all folders (flattened)
+								<SearchView
+									flattenedFolders={flattenedFolders}
+									onSelect={navigateToFolder}
+									onPrepareAddFolder={handlePrepareAddFolder}
+								/>
+							) : (
+								// Normal mode: Show current folder's contents
+								<FoldersView
+									folders={currentFolders}
+									onSelect={navigateToFolder}
+									onPrepareAddFolder={handlePrepareAddFolder}
+								/>
+							)}
+						</>
 					)}
 				</Command.List>
 			</Command>
@@ -243,9 +348,11 @@ export const FolderMenu = memo(function FolderMenu({
 function SearchView({
 	flattenedFolders,
 	onSelect,
+	onPrepareAddFolder,
 }: {
 	flattenedFolders: FlattenedFolder[];
 	onSelect: (folderId: string) => void;
+	onPrepareAddFolder: () => void;
 }) {
 	return (
 		<>
@@ -277,7 +384,7 @@ function SearchView({
 				})}
 			</Command.Group>
 
-			<Actions />
+			<Actions onPrepareAddFolder={onPrepareAddFolder} />
 		</>
 	);
 }
@@ -286,9 +393,11 @@ function SearchView({
 function FoldersView({
 	folders,
 	onSelect,
+	onPrepareAddFolder,
 }: {
 	folders: Folder[];
 	onSelect: (folderId: string) => void;
+	onPrepareAddFolder: () => void;
 }) {
 	return (
 		<>
@@ -310,16 +419,16 @@ function FoldersView({
 				</Command.Group>
 			)}
 
-			<Actions />
+			<Actions onPrepareAddFolder={onPrepareAddFolder} />
 		</>
 	);
 }
 
 // Actions: Always shown at bottom of every page
-function Actions() {
+function Actions({ onPrepareAddFolder }: { onPrepareAddFolder: () => void }) {
 	return (
 		<Command.Group heading="Actions">
-			<Command.Item>
+			<Command.Item onSelect={onPrepareAddFolder}>
 				<Plus size={18} />
 				New Folder...
 			</Command.Item>
