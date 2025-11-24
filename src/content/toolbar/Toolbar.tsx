@@ -270,7 +270,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		};
 
 		window.addEventListener("inspo-save-image", handleSaveImage);
-		return () => window.removeEventListener("inspo-save-image", handleSaveImage);
+		return () =>
+			window.removeEventListener("inspo-save-image", handleSaveImage);
 	}, [handleImageCapture]);
 
 	return (

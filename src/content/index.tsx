@@ -87,17 +87,21 @@ const setupMessageListener = () => {
 			const srcUrl = message.payload as string;
 
 			// Use the stored right-clicked element, or fall back to center of screen
-			const rect = lastRightClickedElement?.getBoundingClientRect() ?? new DOMRect(
-				window.innerWidth / 2 - 50,
-				window.innerHeight / 2 - 50,
-				100,
-				100
-			);
+			const rect =
+				lastRightClickedElement?.getBoundingClientRect() ??
+				new DOMRect(
+					window.innerWidth / 2 - 50,
+					window.innerHeight / 2 - 50,
+					100,
+					100,
+				);
 
 			// Dispatch custom event for Toolbar to handle
-			window.dispatchEvent(new CustomEvent("inspo-save-image", {
-				detail: { src: srcUrl, rect }
-			}));
+			window.dispatchEvent(
+				new CustomEvent("inspo-save-image", {
+					detail: { src: srcUrl, rect },
+				}),
+			);
 
 			// Clear the stored element
 			lastRightClickedElement = null;
