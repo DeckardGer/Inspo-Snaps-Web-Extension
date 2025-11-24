@@ -15,9 +15,14 @@ import type { CapturedImage } from "@/types";
 interface ImagePreviewPanelProps {
 	images: CapturedImage[];
 	onClose: () => void;
+	onRemoveImage: (id: string) => void;
 }
 
-export function ImagePreviewPanel({ images, onClose }: ImagePreviewPanelProps) {
+export function ImagePreviewPanel({
+	images,
+	onClose,
+	onRemoveImage,
+}: ImagePreviewPanelProps) {
 	const [api, setApi] = useState<CarouselApi>();
 	const [isClosing, setIsClosing] = useState(false);
 
@@ -29,8 +34,14 @@ export function ImagePreviewPanel({ images, onClose }: ImagePreviewPanelProps) {
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape" || e.key === "Backspace") {
+			if (e.key === "Escape") {
 				handleClose();
+			} else if (e.key === "Backspace") {
+				const currentIndex = api?.selectedScrollSnap() ?? 0;
+				const currentImage = images[currentIndex];
+				if (currentImage) {
+					onRemoveImage(currentImage.id);
+				}
 			} else if (e.key === "ArrowLeft") {
 				api?.scrollPrev();
 			} else if (e.key === "ArrowRight") {
@@ -40,7 +51,7 @@ export function ImagePreviewPanel({ images, onClose }: ImagePreviewPanelProps) {
 
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [api, handleClose]);
+	}, [api, handleClose, images, onRemoveImage]);
 
 	return (
 		<div
@@ -72,11 +83,20 @@ export function ImagePreviewPanel({ images, onClose }: ImagePreviewPanelProps) {
 							key={image.id}
 							className="flex items-center justify-center h-full"
 						>
-							<img
-								src={image.src}
-								alt=""
-								className="w-auto h-auto max-w-full max-h-full rounded-md shadow-lg"
-							/>
+							<div className="relative group">
+								<Button
+									size="icon"
+									className="absolute top-[-6px] left-[-6px] bg-primary hover:bg-primary text-white h-5 w-5 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+									onClick={() => onRemoveImage(image.id)}
+								>
+									<X size={8} />
+								</Button>
+								<img
+									src={image.src}
+									alt=""
+									className="w-auto h-auto max-w-full max-h-full rounded-md shadow-lg"
+								/>
+							</div>
 						</CarouselItem>
 					))}
 				</CarouselContent>

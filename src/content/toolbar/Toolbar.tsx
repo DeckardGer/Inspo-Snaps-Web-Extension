@@ -143,6 +143,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		setCapturedImages((prev) => prev.slice(0, -1));
 	};
 
+	const handleRemoveImage = (id: string) => {
+		setCapturedImages((prev) => {
+			const updated = prev.filter((img) => img.id !== id);
+
+			if (updated.length === 0) {
+				setIsPreviewOpen(false);
+			}
+
+			return updated;
+		});
+	};
+
 	const openWebsite = () => {
 		window.open("https://insposnaps.com", "_blank");
 	};
@@ -286,6 +298,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 						<ImagePreviewPanel
 							images={capturedImages}
 							onClose={handlePreviewClose}
+							onRemoveImage={handleRemoveImage}
 						/>
 					)}
 					{/* Floating thumbnail - visible when maximised with captured images */}

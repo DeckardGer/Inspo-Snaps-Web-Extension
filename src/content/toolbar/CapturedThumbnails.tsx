@@ -57,13 +57,6 @@ export function CapturedThumbnails({
 				>
 					<X size={8} />
 				</Button>
-				// <button
-				// 	type="button"
-				// 	onClick={handleRemoveClick}
-				// 	className="absolute top-[-6px] left-[-6px] bg-primary text-white h-5 w-5 rounded-full flex items-center justify-center transition-colors"
-				// >
-				// 	<X size={12} />
-				// </button>
 			) : (
 				count > 1 && (
 					<Badge className="absolute top-[-6px] left-[-6px] bg-primary text-white h-5 min-w-5 rounded-full px-1 font-mono tabular-nums">
