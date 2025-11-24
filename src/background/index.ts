@@ -43,9 +43,11 @@ browser.contextMenus.create({
 	contexts: ["image"],
 });
 
-browser.contextMenus.onClicked.addListener((info) => {
-	if (info.menuItemId === "save-image" && info.srcUrl) {
-		// TODO: Implement image saving
-		console.log("Save image:", info.srcUrl);
+browser.contextMenus.onClicked.addListener(async (info, tab) => {
+	if (info.menuItemId === "save-image" && info.srcUrl && tab?.id) {
+		browser.tabs.sendMessage(tab.id, {
+			type: MessageType.SAVE_IMAGE,
+			payload: info.srcUrl,
+		});
 	}
 });

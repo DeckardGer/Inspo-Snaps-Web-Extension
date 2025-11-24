@@ -13,6 +13,7 @@ import { type Corner, type Message, MessageType } from "@/types";
 // Module state
 let rootContainer: HTMLElement | null = null;
 let root: ReactDOM.Root | null = null;
+let lastRightClickedElement: HTMLElement | null = null;
 
 const getSiteState = async (): Promise<boolean> => {
 	const hostname = window.location.hostname;
@@ -82,13 +83,38 @@ const setupMessageListener = () => {
 			} else {
 				hideToolbar();
 			}
+		} else if (message.type === MessageType.SAVE_IMAGE) {
+			const srcUrl = message.payload as string;
+
+			// Use the stored right-clicked element, or fall back to center of screen
+			const rect = lastRightClickedElement?.getBoundingClientRect() ?? new DOMRect(
+				window.innerWidth / 2 - 50,
+				window.innerHeight / 2 - 50,
+				100,
+				100
+			);
+
+			// Dispatch custom event for Toolbar to handle
+			window.dispatchEvent(new CustomEvent("inspo-save-image", {
+				detail: { src: srcUrl, rect }
+			}));
+
+			// Clear the stored element
+			lastRightClickedElement = null;
 		}
+	});
+};
+
+const setupContextMenuTracker = () => {
+	document.addEventListener("contextmenu", (e) => {
+		lastRightClickedElement = e.target as HTMLElement;
 	});
 };
 
 const init = async () => {
 	const enabled = await getSiteState();
 	setupMessageListener();
+	setupContextMenuTracker();
 	if (enabled) showToolbar();
 };
 

@@ -5,6 +5,7 @@ export interface Message {
 
 export const MessageType = {
 	SITE_STATE_UPDATED: "SITE_STATE_UPDATED",
+	SAVE_IMAGE: "SAVE_IMAGE",
 } as const;
 
 export type MessageTypeType = (typeof MessageType)[keyof typeof MessageType];

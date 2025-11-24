@@ -262,6 +262,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		fetchFolders().then(setFolders);
 	}, []);
 
+	// Listen for context menu image saves
+	useEffect(() => {
+		const handleSaveImage = (e: Event) => {
+			const { src, rect } = (e as CustomEvent).detail;
+			handleImageCapture({ src, rect });
+		};
+
+		window.addEventListener("inspo-save-image", handleSaveImage);
+		return () => window.removeEventListener("inspo-save-image", handleSaveImage);
+	}, [handleImageCapture]);
+
 	return (
 		<>
 			<ImageSnapper
