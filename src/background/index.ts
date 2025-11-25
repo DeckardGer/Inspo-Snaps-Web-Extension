@@ -1,5 +1,7 @@
 import browser from "webextension-polyfill";
+import { handleMessage } from "@/background/messages";
 import { ENABLED_SITES_KEY } from "@/lib/constants";
+import type { Message } from "@/types";
 import { MessageType } from "@/types";
 
 const getEnabledSites = async (): Promise<Record<string, boolean>> => {
@@ -51,3 +53,10 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
 		});
 	}
 });
+
+// Handle messages from content scripts
+browser.runtime.onMessage.addListener(
+	(message: Message, sender): Promise<unknown> => {
+		return handleMessage(message, sender);
+	},
+);

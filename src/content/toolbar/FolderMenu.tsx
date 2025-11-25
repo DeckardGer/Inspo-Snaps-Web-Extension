@@ -25,12 +25,14 @@ interface FolderMenuProps {
 	folders: Folder[] | null;
 	isMinimised?: boolean;
 	onCreateFolder?: (name: string, parentId: string | null) => Promise<string>;
+	onFolderSelect?: (folderId: string | null) => void;
 }
 
 export const FolderMenu = memo(function FolderMenu({
 	folders,
 	isMinimised = false,
 	onCreateFolder,
+	onFolderSelect,
 }: FolderMenuProps) {
 	const [search, setSearch] = useState("");
 	const [pages, setPages] = useState<string[]>([]);
@@ -194,6 +196,11 @@ export const FolderMenu = memo(function FolderMenu({
 			}
 		}
 	}, [isMinimised]);
+
+	// Notify parent of folder selection changes
+	useEffect(() => {
+		onFolderSelect?.(currentFolderId ?? null);
+	}, [currentFolderId, onFolderSelect]);
 
 	// Loading state
 	if (folders === null) {

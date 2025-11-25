@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { Loader2, Save, X } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,16 @@ interface CapturedThumbnailsProps {
 	images: CapturedImage[];
 	onClick: () => void;
 	onRemove: () => void;
+	onSave?: () => void;
+	isSaving?: boolean;
 }
 
 export function CapturedThumbnails({
 	images,
 	onClick,
 	onRemove,
+	onSave,
+	isSaving = false,
 }: CapturedThumbnailsProps) {
 	const [isHovered, setIsHovered] = useState(false);
 
@@ -29,41 +33,62 @@ export function CapturedThumbnails({
 		onRemove();
 	};
 
+	const handleSaveClick = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		onSave?.();
+	};
+
 	return (
-		<Button
-			className="relative block cursor-pointer p-0 border-0 bg-transparent rounded-lg shadow-md"
-			style={{
-				width: THUMBNAIL_SIZE,
-				height: THUMBNAIL_SIZE,
-			}}
-			onClick={onClick}
-			onMouseEnter={() => setIsHovered(true)}
-			onMouseLeave={() => setIsHovered(false)}
-		>
-			<img
-				src={latestImage.src}
-				alt=""
-				className="object-cover rounded-lg"
+		<div className="relative flex items-center gap-2">
+			<Button
+				className="relative block cursor-pointer p-0 border-0 bg-transparent rounded-lg shadow-md"
 				style={{
 					width: THUMBNAIL_SIZE,
 					height: THUMBNAIL_SIZE,
 				}}
-			/>
-			{isHovered ? (
+				onClick={onClick}
+				onMouseEnter={() => setIsHovered(true)}
+				onMouseLeave={() => setIsHovered(false)}
+			>
+				<img
+					src={latestImage.src}
+					alt=""
+					className="object-cover rounded-lg"
+					style={{
+						width: THUMBNAIL_SIZE,
+						height: THUMBNAIL_SIZE,
+					}}
+				/>
+				{isHovered ? (
+					<Button
+						size="icon"
+						className="absolute top-[-6px] left-[-6px] bg-primary hover:bg-primary text-white h-5 w-5 rounded-full"
+						onClick={handleRemoveClick}
+					>
+						<X size={8} />
+					</Button>
+				) : (
+					count > 1 && (
+						<Badge className="absolute top-[-6px] left-[-6px] bg-primary text-white h-5 min-w-5 rounded-full px-1 font-mono tabular-nums">
+							{count}
+						</Badge>
+					)
+				)}
+			</Button>
+			{onSave && (
 				<Button
 					size="icon"
-					className="absolute top-[-6px] left-[-6px] bg-primary hover:bg-primary text-white h-5 w-5 rounded-full"
-					onClick={handleRemoveClick}
+					className="absolute top-[-6px] right-[-6px] h-8 w-8 rounded-full shadow-md"
+					onClick={handleSaveClick}
+					disabled={isSaving}
 				>
-					<X size={8} />
+					{isSaving ? (
+						<Loader2 className="animate-spin" size={16} />
+					) : (
+						<Save size={16} />
+					)}
 				</Button>
-			) : (
-				count > 1 && (
-					<Badge className="absolute top-[-6px] left-[-6px] bg-primary text-white h-5 min-w-5 rounded-full px-1 font-mono tabular-nums">
-						{count}
-					</Badge>
-				)
 			)}
-		</Button>
+		</div>
 	);
 }

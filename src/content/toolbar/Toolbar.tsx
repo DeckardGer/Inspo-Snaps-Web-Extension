@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import browser from "webextension-polyfill";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Separator } from "@/components/ui/separator";
@@ -31,55 +32,17 @@ import {
 	getToolbarSize,
 } from "@/lib/helpers";
 import { cn } from "@/lib/utils";
+import { getFolderService } from "@/services/folders";
+import { getImageService } from "@/services/images";
 import type {
 	CapturedImage,
 	Corner,
 	FlyingImageData,
 	Folder,
 	ImageCaptureData,
+	Message,
 } from "@/types";
-
-// Mock data - will be replaced with API call
-const MOCK_FOLDERS: Folder[] = [
-	{
-		name: "Folder 1",
-		id: "folder-1",
-		folders: [
-			{ name: "Folder 1 A", id: "folder-1-a", folders: [] },
-			{
-				name: "Folder 1 B",
-				id: "folder-1-b",
-				folders: [
-					{ name: "Folder 1 B A", id: "folder-1-b-a", folders: [] },
-					{ name: "Folder 1 B B", id: "folder-1-b-b", folders: [] },
-					{ name: "Folder 1 B C", id: "folder-1-b-c", folders: [] },
-				],
-			},
-			{ name: "Folder 1 C", id: "folder-1-c", folders: [] },
-		],
-	},
-	{ name: "Folder 2", id: "folder-2", folders: [] },
-	{ name: "Folder 3", id: "folder-3", folders: [] },
-	{ name: "Folder 4", id: "folder-4", folders: [] },
-	{ name: "Folder 5", id: "folder-5", folders: [] },
-	{ name: "Folder 6", id: "folder-6", folders: [] },
-];
-
-// TODO: Remove - Mock API function - replace with real API call
-const fetchFolders = async (): Promise<Folder[]> => {
-	await new Promise((resolve) => setTimeout(resolve, 2000));
-	return MOCK_FOLDERS;
-};
-
-// TODO: Remove - Mock API function - replace with real API call
-const createFolderApi = async (name: string, _parentId: string | null): Promise<Folder> => {
-	await new Promise((resolve) => setTimeout(resolve, 500));
-	return {
-		id: `folder-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-		name,
-		folders: [],
-	};
-};
+import { MessageType } from "@/types";
 
 interface ToolbarProps {
 	initialCorner: Corner;
@@ -101,6 +64,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([]);
 	const [flyingImages, setFlyingImages] = useState<FlyingImageData[]>([]);
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+	const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+	const [isSavingImages, setIsSavingImages] = useState(false);
 
 	const handleImageCapture = useCallback(
 		(data: ImageCaptureData) => {
@@ -169,39 +134,40 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		name: string,
 		parentId: string | null,
 	): Promise<string> => {
-		const newFolder = await createFolderApi(name, parentId);
+		const folderService = getFolderService();
+		const newFolder = await folderService.createFolder(name, parentId);
 
-		setFolders((prev) => {
-			if (!prev) return [newFolder];
-
-			if (parentId === null) {
-				// Add to root level
-				return [...prev, newFolder];
-			}
-
-			// Recursively find parent and add the new folder
-			const addToParent = (folders: Folder[]): Folder[] => {
-				return folders.map((folder) => {
-					if (folder.id === parentId) {
-						return {
-							...folder,
-							folders: [...folder.folders, newFolder],
-						};
-					}
-					if (folder.folders.length > 0) {
-						return {
-							...folder,
-							folders: addToParent(folder.folders),
-						};
-					}
-					return folder;
-				});
-			};
-
-			return addToParent(prev);
-		});
+		// Refetch all folders to get updated tree structure
+		const updatedFolders = await folderService.getFolders();
+		setFolders(updatedFolders);
 
 		return newFolder.id;
+	};
+
+	const handleFolderSelect = (folderId: string | null) => {
+		setCurrentFolderId(folderId);
+	};
+
+	const handleSaveImages = async () => {
+		if (capturedImages.length === 0 || isSavingImages) return;
+
+		setIsSavingImages(true);
+
+		try {
+			const imageService = getImageService();
+			await imageService.saveImages(
+				capturedImages.map((img) => ({
+					folderId: currentFolderId,
+					src: img.src,
+				})),
+			);
+
+			// Clear captured images after successful save
+			setCapturedImages([]);
+			setIsPreviewOpen(false);
+		} finally {
+			setIsSavingImages(false);
+		}
 	};
 
 	const openWebsite = () => {
@@ -308,7 +274,31 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 
 	// Fetch folders on mount
 	useEffect(() => {
-		fetchFolders().then(setFolders);
+		const folderService = getFolderService();
+		folderService.getFolders().then(setFolders);
+	}, []);
+
+	// Listen for folder changes from background script
+	useEffect(() => {
+		const handleMessage = (message: Message) => {
+			if (message.type === MessageType.FOLDERS_CHANGED) {
+				console.log(
+					"[Background] Folders changed in another tab, refetching...",
+				);
+				const folderService = getFolderService();
+				folderService.getFolders().then(setFolders);
+			} else if (message.type === MessageType.IMAGES_CHANGED) {
+				console.log("[Background] Images changed in another tab");
+				// Images are only shown after explicit user action (opening preview),
+				// so we don't need to refetch automatically here
+			}
+		};
+
+		browser.runtime.onMessage.addListener(handleMessage);
+
+		return () => {
+			browser.runtime.onMessage.removeListener(handleMessage);
+		};
 	}, []);
 
 	// Listen for context menu image saves
@@ -355,6 +345,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 							folders={folders}
 							isMinimised={isMinimised}
 							onCreateFolder={handleCreateFolder}
+							onFolderSelect={handleFolderSelect}
 						/>
 						<Separator />
 					</div>
@@ -383,6 +374,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 								images={capturedImages}
 								onClick={handleThumbnailClick}
 								onRemove={handleRemoveLatestImage}
+								onSave={handleSaveImages}
+								isSaving={isSavingImages}
 							/>
 						</div>
 					)}
