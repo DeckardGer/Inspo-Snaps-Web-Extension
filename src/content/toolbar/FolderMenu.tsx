@@ -50,8 +50,16 @@ export const FolderMenu = memo(function FolderMenu({
 	const listRef = useRef<HTMLDivElement>(null);
 
 	// Helper to focus input after state changes
-	const focusInput = useCallback(() => {
-		setTimeout(() => inputRef.current?.focus(), 0);
+	const focusInput = useCallback((options?: { placeCursorAtEnd?: boolean }) => {
+		setTimeout(() => {
+			const input = inputRef.current;
+			if (!input) return;
+			input.focus();
+			if (options?.placeCursorAtEnd) {
+				const length = input.value.length;
+				input.setSelectionRange(length, length);
+			}
+		}, 0);
 	}, []);
 
 	// Helper to reset to normal browsing state
@@ -166,7 +174,7 @@ export const FolderMenu = memo(function FolderMenu({
 		if (!currentFolderId) return;
 		setIsRenamingFolder(true);
 		setSearch(currentFolder?.name ?? "");
-		focusInput();
+		focusInput({ placeCursorAtEnd: true });
 	};
 
 	const handleRenameFolder = useCallback(async () => {
