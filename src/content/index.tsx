@@ -7,6 +7,7 @@ import {
 	TOOLBAR_CORNER_KEY,
 } from "@/lib/constants";
 import { normaliseTailwind } from "@/lib/utils";
+import { useToolbarStore } from "@/store/toolbarStore";
 import styles from "@/styles.css?inline";
 import { type Corner, type Message, MessageType } from "@/types";
 
@@ -65,6 +66,9 @@ const showToolbar = async () => {
 
 const hideToolbar = () => {
 	if (!rootContainer) return;
+
+	// Reset toolbar state before unmounting
+	useToolbarStore.getState().reset();
 
 	if (root) {
 		root.unmount();

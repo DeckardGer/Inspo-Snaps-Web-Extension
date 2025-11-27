@@ -14,6 +14,7 @@ interface ToolbarState {
 	setIsInspecting: (value: boolean) => void;
 	toggleIsInspecting: () => void;
 	setIsPreviewOpen: (value: boolean) => void;
+	reset: () => void;
 }
 
 export const useToolbarStore = create<ToolbarState>((set) => ({
@@ -28,4 +29,6 @@ export const useToolbarStore = create<ToolbarState>((set) => ({
 	toggleIsInspecting: () =>
 		set((state) => ({ isInspecting: !state.isInspecting })),
 	setIsPreviewOpen: (value) => set({ isPreviewOpen: value }),
+	reset: () =>
+		set({ isMinimised: true, isInspecting: false, isPreviewOpen: false }),
 }));
