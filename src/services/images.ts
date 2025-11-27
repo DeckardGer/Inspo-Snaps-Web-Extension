@@ -1,7 +1,6 @@
-import browser from "webextension-polyfill";
 import { APP_MODE } from "@/lib/config";
+import { sendMessage } from "@/lib/messaging";
 import type { StoredImage } from "@/types";
-import { MessageType } from "@/types";
 
 // Service interface
 export interface ImageService {
@@ -21,16 +20,17 @@ export interface ImageService {
 // Local (Message-based) implementation
 class LocalImageService implements ImageService {
 	async getImagesByFolder(folderId: string | null): Promise<StoredImage[]> {
-		const response = (await browser.runtime.sendMessage({
-			type: MessageType.GET_IMAGES,
-			payload: { folderId },
-		})) as { success: boolean; images: StoredImage[] };
+		try {
+			const { images } = await sendMessage<{ images: StoredImage[] }>({
+				type: "GET_IMAGES",
+				payload: { folderId },
+			});
 
-		if (!response.success) {
-			throw new Error("Failed to get images");
+			return images;
+		} catch (error) {
+			console.error("[ImageService] getImagesByFolder failed:", error);
+			throw error;
 		}
-
-		return response.images;
 	}
 
 	async getAllImages(): Promise<StoredImage[]> {
@@ -46,26 +46,30 @@ class LocalImageService implements ImageService {
 	async saveImages(
 		images: Array<Omit<StoredImage, "id" | "createdAt">>,
 	): Promise<StoredImage[]> {
-		const response = (await browser.runtime.sendMessage({
-			type: MessageType.SAVE_IMAGES,
-			payload: { images },
-		})) as { success: boolean; images: StoredImage[] };
+		try {
+			const { images: savedImages } = await sendMessage<{
+				images: StoredImage[];
+			}>({
+				type: "SAVE_IMAGES",
+				payload: { images },
+			});
 
-		if (!response.success) {
-			throw new Error("Failed to save images");
+			return savedImages;
+		} catch (error) {
+			console.error("[ImageService] saveImages failed:", error);
+			throw error;
 		}
-
-		return response.images;
 	}
 
 	async deleteImage(id: string): Promise<void> {
-		const response = (await browser.runtime.sendMessage({
-			type: MessageType.DELETE_IMAGE,
-			payload: { id },
-		})) as { success: boolean };
-
-		if (!response.success) {
-			throw new Error("Failed to delete image");
+		try {
+			await sendMessage<void>({
+				type: "DELETE_IMAGE",
+				payload: { id },
+			});
+		} catch (error) {
+			console.error("[ImageService] deleteImage failed:", error);
+			throw error;
 		}
 	}
 
@@ -73,16 +77,17 @@ class LocalImageService implements ImageService {
 		imageId: string,
 		folderId: string | null,
 	): Promise<StoredImage> {
-		const response = (await browser.runtime.sendMessage({
-			type: MessageType.MOVE_IMAGE,
-			payload: { imageId, folderId },
-		})) as { success: boolean; image: StoredImage };
+		try {
+			const { image } = await sendMessage<{ image: StoredImage }>({
+				type: "MOVE_IMAGE",
+				payload: { imageId, folderId },
+			});
 
-		if (!response.success) {
-			throw new Error("Failed to move image");
+			return image;
+		} catch (error) {
+			console.error("[ImageService] moveImageToFolder failed:", error);
+			throw error;
 		}
-
-		return response.image;
 	}
 }
 

@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 import * as storage from "@/background/storage";
-import type { Message, StoredFolder, StoredImage } from "@/types";
 import { MessageType } from "@/types";
+import type { Message, ServiceResponse } from "@/types/messages";
 
 /**
  * Handle messages from content scripts and route to appropriate storage operations
@@ -9,82 +9,100 @@ import { MessageType } from "@/types";
 export const handleMessage = async (
 	message: Message,
 	sender: browser.Runtime.MessageSender,
-): Promise<unknown> => {
-	const { type, payload } = message;
+): Promise<ServiceResponse<unknown>> => {
+	try {
+		const { type } = message;
 
-	switch (type) {
-		// Folder operations
-		case MessageType.GET_FOLDERS: {
-			const folders = await storage.getAllFolders();
-			return { success: true, folders };
-		}
-
-		case MessageType.CREATE_FOLDER: {
-			const { name, parentId } = payload as {
-				name: string;
-				parentId: string | null;
-			};
-			const folder = await storage.createFolder(name, parentId);
-			broadcastFoldersChanged(sender.tab?.id);
-			return { success: true, folder };
-		}
-
-		case MessageType.UPDATE_FOLDER: {
-			const { id, updates } = payload as {
-				id: string;
-				updates: Partial<Pick<StoredFolder, "name" | "parentId">>;
-			};
-			const folder = await storage.updateFolder(id, updates);
-			broadcastFoldersChanged(sender.tab?.id);
-			return { success: true, folder };
-		}
-
-		case MessageType.DELETE_FOLDER: {
-			const { id } = payload as { id: string };
-			await storage.deleteFolder(id);
-			broadcastFoldersChanged(sender.tab?.id);
-			return { success: true };
-		}
-
-		// Image operations
-		case MessageType.GET_IMAGES: {
-			const { folderId } = payload as { folderId: string | null };
-			const images = await storage.getImagesByFolder(folderId);
-			return { success: true, images };
-		}
-
-		case MessageType.SAVE_IMAGES: {
-			const { images } = payload as {
-				images: Array<Omit<StoredImage, "id" | "createdAt">>;
-			};
-			const savedImages: StoredImage[] = [];
-			for (const image of images) {
-				const saved = await storage.saveImage(image);
-				savedImages.push(saved);
+		switch (type) {
+			// Folder operations
+			case "GET_FOLDERS": {
+				const folders = await storage.getAllFolders();
+				return { success: true, data: { folders } };
 			}
-			broadcastImagesChanged(sender.tab?.id);
-			return { success: true, images: savedImages };
-		}
 
-		case MessageType.DELETE_IMAGE: {
-			const { id } = payload as { id: string };
-			await storage.deleteImage(id);
-			broadcastImagesChanged(sender.tab?.id);
-			return { success: true };
-		}
+			case "CREATE_FOLDER": {
+				const { name, parentId } = message.payload;
+				const folder = await storage.createFolder(name, parentId);
+				await broadcastFoldersChanged(sender.tab?.id);
+				return { success: true, data: { folder } };
+			}
 
-		case MessageType.MOVE_IMAGE: {
-			const { imageId, folderId } = payload as {
-				imageId: string;
-				folderId: string | null;
-			};
-			const image = await storage.moveImageToFolder(imageId, folderId);
-			broadcastImagesChanged(sender.tab?.id);
-			return { success: true, image };
-		}
+			case "UPDATE_FOLDER": {
+				const { id, updates } = message.payload;
+				const folder = await storage.updateFolder(id, updates);
+				await broadcastFoldersChanged(sender.tab?.id);
+				return { success: true, data: { folder } };
+			}
 
-		default:
-			return { success: false, error: "Unknown message type" };
+			case "DELETE_FOLDER": {
+				const { id } = message.payload;
+				await storage.deleteFolder(id);
+				await broadcastFoldersChanged(sender.tab?.id);
+				return { success: true, data: undefined };
+			}
+
+			// Image operations
+			case "GET_IMAGES": {
+				const { folderId } = message.payload;
+				const images = await storage.getImagesByFolder(folderId);
+				return { success: true, data: { images } };
+			}
+
+			case "SAVE_IMAGES": {
+				const { images } = message.payload;
+				const savedImages = [];
+				for (const image of images) {
+					const saved = await storage.saveImage(image);
+					savedImages.push(saved);
+				}
+				await broadcastImagesChanged(sender.tab?.id);
+				return { success: true, data: { images: savedImages } };
+			}
+
+			case "DELETE_IMAGE": {
+				const { id } = message.payload;
+				await storage.deleteImage(id);
+				await broadcastImagesChanged(sender.tab?.id);
+				return { success: true, data: undefined };
+			}
+
+			case "MOVE_IMAGE": {
+				const { imageId, folderId } = message.payload;
+				const image = await storage.moveImageToFolder(imageId, folderId);
+				await broadcastImagesChanged(sender.tab?.id);
+				return { success: true, data: { image } };
+			}
+
+			// Broadcast events (no response needed from content scripts)
+			case "FOLDERS_CHANGED":
+			case "IMAGES_CHANGED":
+			case "SITE_STATE_UPDATED":
+			case "SAVE_IMAGE":
+				// These are handled elsewhere or don't need storage operations
+				return { success: true, data: undefined };
+
+			default: {
+				// TypeScript ensures exhaustiveness
+				const _exhaustive: never = type;
+				return {
+					success: false,
+					error: {
+						message: "Unknown message type",
+						code: "UNKNOWN_MESSAGE",
+					},
+				};
+			}
+		}
+	} catch (error) {
+		console.error("[Background] Message handler error:", error);
+		return {
+			success: false,
+			error: {
+				message: error instanceof Error ? error.message : "Unknown error",
+				code: "HANDLER_ERROR",
+				cause: error instanceof Error ? error : undefined,
+			},
+		};
 	}
 };
 
@@ -93,6 +111,8 @@ export const handleMessage = async (
  */
 const broadcastFoldersChanged = async (senderTabId?: number) => {
 	const tabs = await browser.tabs.query({});
+	const errors: Array<{ tabId: number; error: unknown }> = [];
+
 	for (const tab of tabs) {
 		// Skip the tab that sent the original message
 		if (tab.id && tab.id !== senderTabId) {
@@ -100,10 +120,28 @@ const broadcastFoldersChanged = async (senderTabId?: number) => {
 				await browser.tabs.sendMessage(tab.id, {
 					type: MessageType.FOLDERS_CHANGED,
 				});
-			} catch (_error) {
-				// Tab might not have content script injected, ignore
+			} catch (error) {
+				// Distinguish expected vs unexpected errors
+				if (
+					error instanceof Error &&
+					error.message.includes("receiving end does not exist")
+				) {
+					// Expected: tab has no content script
+					continue;
+				}
+
+				// Unexpected error - log it
+				console.warn(
+					`[Background] Failed to broadcast to tab ${tab.id}:`,
+					error,
+				);
+				errors.push({ tabId: tab.id, error });
 			}
 		}
+	}
+
+	if (errors.length > 0) {
+		console.error("[Background] Broadcast errors:", errors);
 	}
 };
 
@@ -112,6 +150,8 @@ const broadcastFoldersChanged = async (senderTabId?: number) => {
  */
 const broadcastImagesChanged = async (senderTabId?: number) => {
 	const tabs = await browser.tabs.query({});
+	const errors: Array<{ tabId: number; error: unknown }> = [];
+
 	for (const tab of tabs) {
 		// Skip the tab that sent the original message
 		if (tab.id && tab.id !== senderTabId) {
@@ -119,9 +159,27 @@ const broadcastImagesChanged = async (senderTabId?: number) => {
 				await browser.tabs.sendMessage(tab.id, {
 					type: MessageType.IMAGES_CHANGED,
 				});
-			} catch (_error) {
-				// Tab might not have content script injected, ignore
+			} catch (error) {
+				// Distinguish expected vs unexpected errors
+				if (
+					error instanceof Error &&
+					error.message.includes("receiving end does not exist")
+				) {
+					// Expected: tab has no content script
+					continue;
+				}
+
+				// Unexpected error - log it
+				console.warn(
+					`[Background] Failed to broadcast to tab ${tab.id}:`,
+					error,
+				);
+				errors.push({ tabId: tab.id, error });
 			}
 		}
+	}
+
+	if (errors.length > 0) {
+		console.error("[Background] Broadcast errors:", errors);
 	}
 };

@@ -17,7 +17,7 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { flattenFolders } from "@/lib/helpers";
+import { flattenFolders } from "@/lib/transforms";
 import { cn } from "@/lib/utils";
 import type { FlattenedFolder, Folder } from "@/types";
 

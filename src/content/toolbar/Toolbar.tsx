@@ -5,17 +5,18 @@ import {
 	GripVertical,
 } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import browser from "webextension-polyfill";
+import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Separator } from "@/components/ui/separator";
-import { saveToolbarCorner } from "@/content/index";
 import { CapturedThumbnails } from "@/content/toolbar/CapturedThumbnails";
 import { FlyingImage } from "@/content/toolbar/FlyingImage";
 import { FolderMenu } from "@/content/toolbar/FolderMenu";
 import { ImagePreviewPanel } from "@/content/toolbar/ImagePreviewPanel";
 import { ImageSnapper } from "@/content/toolbar/ImageSnapper";
+import { useFolderSync } from "@/hooks/useFolderSync";
+import { useImageCapture } from "@/hooks/useImageCapture";
+import { useToolbarDrag } from "@/hooks/useToolbarDrag";
 import {
 	MAXIMISED_WIDTH,
 	MINIMISED_HEIGHT,
@@ -26,23 +27,14 @@ import {
 	TOOLBAR_TIMING_FUNCTION,
 	TOOLBAR_TRANSITION_DURATION,
 } from "@/lib/constants";
-import {
-	calculatePosition,
-	getBestCorner,
-	getToolbarSize,
-} from "@/lib/helpers";
+import { calculatePosition, getToolbarSize } from "@/lib/positioning";
 import { cn } from "@/lib/utils";
 import { getFolderService } from "@/services/folders";
 import { getImageService } from "@/services/images";
-import type {
-	CapturedImage,
-	Corner,
-	FlyingImageData,
-	Folder,
-	ImageCaptureData,
-	Message,
-} from "@/types";
-import { MessageType } from "@/types";
+import { useFoldersStore } from "@/store/foldersStore";
+import { useImagesStore } from "@/store/imagesStore";
+import { useToolbarStore } from "@/store/toolbarStore";
+import type { Corner } from "@/types";
 
 interface ToolbarProps {
 	initialCorner: Corner;
@@ -50,105 +42,81 @@ interface ToolbarProps {
 
 export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	const toolbarRef = useRef<HTMLDivElement>(null);
-	const { width, height } = getToolbarSize(true);
-	const initialPosition = calculatePosition(initialCorner, width, height);
-	const position = useRef(initialPosition);
-	const dragStartPos = useRef({ x: 0, y: 0 });
-	const dragOffset = useRef({ x: 0, y: 0 });
-	const isDragging = useRef(false);
 
-	const [corner, setCorner] = useState<Corner>(initialCorner);
-	const [isMinimised, setIsMinimised] = useState(true);
-	const [isInspecting, setIsInspecting] = useState(false);
-	const [folders, setFolders] = useState<Folder[] | null>(null);
-	const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([]);
-	const [flyingImages, setFlyingImages] = useState<FlyingImageData[]>([]);
-	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-	const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-	const [isSavingImages, setIsSavingImages] = useState(false);
+	// Stores
+	const {
+		isMinimised,
+		corner,
+		isInspecting,
+		isPreviewOpen,
+		setIsMinimised,
+		setCorner,
+		toggleIsInspecting,
+		setIsPreviewOpen,
+	} = useToolbarStore();
 
-	const handleImageCapture = useCallback(
-		(data: ImageCaptureData) => {
-			// Expand toolbar if minimised
-			if (isMinimised && toolbarRef.current) {
-				toolbarRef.current.style.transition = `all ${TOOLBAR_TRANSITION_DURATION}ms ${TOOLBAR_TIMING_FUNCTION}`;
+	const {
+		capturedImages,
+		flyingImages,
+		isSavingImages,
+		removeCapturedImage,
+		removeLatestImage,
+		clearCapturedImages,
+		setIsSavingImages,
+	} = useImagesStore();
 
-				const { width, height } = getToolbarSize(false);
-				const { x, y } = calculatePosition(corner, width, height);
+	const { folders, currentFolderId, setFolders, setCurrentFolderId } =
+		useFoldersStore();
 
-				position.current = { x, y };
-				toolbarRef.current.style.transform = `translate(${x}px, ${y}px)`;
+	// Custom hooks
+	const { handleMouseDown, updatePosition } = useToolbarDrag(
+		toolbarRef,
+		initialCorner,
+	);
+	const { handleImageCapture, handleFlyingAnimationComplete } = useImageCapture(
+		toolbarRef,
+		updatePosition,
+	);
+	useFolderSync();
 
-				setIsMinimised(false);
-			}
+	// Initialize corner from prop on mount
+	useEffect(() => {
+		setCorner(initialCorner);
+	}, [initialCorner, setCorner]);
 
-			// Create a new flying image with unique ID
-			const flyingImage: FlyingImageData = {
-				...data,
-				id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-			};
-
-			setFlyingImages((prev) => [...prev, flyingImage]);
-		},
-		[isMinimised, corner],
+	// Event handlers
+	const handleThumbnailClick = useCallback(
+		() => setIsPreviewOpen(true),
+		[setIsPreviewOpen],
 	);
 
-	const handleFlyingAnimationComplete = (id: string, src: string) => {
-		// Add to captured images
-		const newCapturedImage: CapturedImage = {
-			id,
-			src,
-		};
+	const handlePreviewClose = useCallback(
+		() => setIsPreviewOpen(false),
+		[setIsPreviewOpen],
+	);
 
-		setCapturedImages((prev) => [...prev, newCapturedImage]);
-
-		// Remove from flying images
-		setFlyingImages((prev) => prev.filter((img) => img.id !== id));
-	};
-
-	const handleThumbnailClick = () => {
-		setIsPreviewOpen(true);
-	};
-
-	const handlePreviewClose = () => {
-		setIsPreviewOpen(false);
-	};
-
-	const handleRemoveLatestImage = () => {
-		setCapturedImages((prev) => prev.slice(0, -1));
-	};
-
-	const handleRemoveImage = (id: string) => {
-		setCapturedImages((prev) => {
-			const updated = prev.filter((img) => img.id !== id);
-
-			if (updated.length === 0) {
+	const handleRemoveImage = useCallback(
+		(id: string) => {
+			removeCapturedImage(id);
+			if (capturedImages.length === 1) {
 				setIsPreviewOpen(false);
 			}
+		},
+		[removeCapturedImage, capturedImages.length, setIsPreviewOpen],
+	);
 
-			return updated;
-		});
-	};
+	const handleCreateFolder = useCallback(
+		async (name: string, parentId: string | null): Promise<string> => {
+			const folderService = getFolderService();
+			const newFolder = await folderService.createFolder(name, parentId);
+			const updatedFolders = await folderService.getFolders();
+			setFolders(updatedFolders);
+			return newFolder.id;
+		},
+		[setFolders],
+	);
 
-	const handleCreateFolder = async (
-		name: string,
-		parentId: string | null,
-	): Promise<string> => {
-		const folderService = getFolderService();
-		const newFolder = await folderService.createFolder(name, parentId);
-
-		// Refetch all folders to get updated tree structure
-		const updatedFolders = await folderService.getFolders();
-		setFolders(updatedFolders);
-
-		return newFolder.id;
-	};
-
-	const handleFolderSelect = (folderId: string | null) => {
-		setCurrentFolderId(folderId);
-	};
-
-	const handleSaveImages = async () => {
+	const handleSaveImages = useCallback(async () => {
 		if (capturedImages.length === 0 || isSavingImages) return;
 
 		setIsSavingImages(true);
@@ -162,143 +130,40 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 				})),
 			);
 
-			// Clear captured images after successful save
-			setCapturedImages([]);
+			clearCapturedImages();
 			setIsPreviewOpen(false);
+		} catch (error) {
+			console.error("[Toolbar] Failed to save images:", error);
+			// Error stays in UI state for user to retry
 		} finally {
 			setIsSavingImages(false);
 		}
-	};
+	}, [
+		capturedImages,
+		currentFolderId,
+		isSavingImages,
+		setIsSavingImages,
+		clearCapturedImages,
+		setIsPreviewOpen,
+	]);
 
-	const openWebsite = () => {
-		window.open("https://insposnaps.com", "_blank");
-	};
-
-	const toggleFolders = () => {
+	const toggleFolders = useCallback(() => {
 		if (!toolbarRef.current) return;
 		toolbarRef.current.style.transition = `all ${TOOLBAR_TRANSITION_DURATION}ms ${TOOLBAR_TIMING_FUNCTION}`;
 
 		const newIsMinimised = !isMinimised;
 		const { width, height } = getToolbarSize(newIsMinimised);
-
 		const { x, y } = calculatePosition(corner, width, height);
 
-		position.current = { x, y };
+		// Update position ref in drag hook
+		updatePosition(x, y);
+
 		toolbarRef.current.style.transform = `translate(${x}px, ${y}px)`;
-
 		setIsMinimised(newIsMinimised);
-	};
+	}, [isMinimised, corner, setIsMinimised, updatePosition]);
 
-	const handleMouseDown = (e: React.MouseEvent) => {
-		isDragging.current = true;
-
-		dragStartPos.current = {
-			x: e.clientX,
-			y: e.clientY,
-		};
-
-		dragOffset.current = {
-			x: e.clientX - position.current.x,
-			y: e.clientY - position.current.y,
-		};
-
-		if (!toolbarRef.current) return;
-		toolbarRef.current.style.transition = "none";
-	};
-
-	useEffect(() => {
-		// Set initial position
-		if (toolbarRef.current) {
-			toolbarRef.current.style.transform = `translate(${position.current.x}px, ${position.current.y}px)`;
-		}
-
-		const handleMouseMove = (e: MouseEvent) => {
-			if (!isDragging.current || !toolbarRef.current) return;
-
-			const newX = e.clientX - dragOffset.current.x;
-			const newY = e.clientY - dragOffset.current.y;
-
-			position.current = {
-				x: newX,
-				y: newY,
-			};
-
-			toolbarRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
-		};
-
-		const handleMouseUp = (e: MouseEvent) => {
-			if (!isDragging.current) return;
-
-			isDragging.current = false;
-
-			if (!toolbarRef.current) return;
-			toolbarRef.current.style.transition = `transform ${TOOLBAR_TRANSITION_DURATION}ms ${TOOLBAR_TIMING_FUNCTION}`;
-
-			const bestCorner = getBestCorner(
-				e.clientX,
-				e.clientY,
-				dragStartPos.current.x,
-				dragStartPos.current.y,
-			);
-			setCorner(bestCorner);
-			saveToolbarCorner(bestCorner);
-
-			const { width, height } = getToolbarSize(isMinimised);
-
-			const { x, y } = calculatePosition(bestCorner, width, height);
-			position.current = { x, y };
-			toolbarRef.current.style.transform = `translate(${x}px, ${y}px)`;
-		};
-
-		const handleResize = () => {
-			if (!toolbarRef.current) return;
-
-			// Recalculate position based on current corner and new window size
-			const { width, height } = getToolbarSize(isMinimised);
-			const { x, y } = calculatePosition(corner, width, height);
-
-			position.current = { x, y };
-			toolbarRef.current.style.transform = `translate(${x}px, ${y}px)`;
-		};
-
-		document.addEventListener("mousemove", handleMouseMove);
-		document.addEventListener("mouseup", handleMouseUp);
-		window.addEventListener("resize", handleResize);
-
-		return () => {
-			document.removeEventListener("mousemove", handleMouseMove);
-			document.removeEventListener("mouseup", handleMouseUp);
-			window.removeEventListener("resize", handleResize);
-		};
-	}, [isMinimised, corner]);
-
-	// Fetch folders on mount
-	useEffect(() => {
-		const folderService = getFolderService();
-		folderService.getFolders().then(setFolders);
-	}, []);
-
-	// Listen for folder changes from background script
-	useEffect(() => {
-		const handleMessage = (message: Message) => {
-			if (message.type === MessageType.FOLDERS_CHANGED) {
-				console.log(
-					"[Background] Folders changed in another tab, refetching...",
-				);
-				const folderService = getFolderService();
-				folderService.getFolders().then(setFolders);
-			} else if (message.type === MessageType.IMAGES_CHANGED) {
-				console.log("[Background] Images changed in another tab");
-				// Images are only shown after explicit user action (opening preview),
-				// so we don't need to refetch automatically here
-			}
-		};
-
-		browser.runtime.onMessage.addListener(handleMessage);
-
-		return () => {
-			browser.runtime.onMessage.removeListener(handleMessage);
-		};
+	const openWebsite = useCallback(() => {
+		window.open("https://insposnaps.com", "_blank");
 	}, []);
 
 	// Listen for context menu image saves
@@ -319,6 +184,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 				isInspecting={isInspecting}
 				onImageCapture={handleImageCapture}
 			/>
+
 			{flyingImages.map((flyingImage) => (
 				<FlyingImage
 					key={flyingImage.id}
@@ -328,6 +194,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 					onAnimationComplete={handleFlyingAnimationComplete}
 				/>
 			))}
+
 			<div
 				ref={toolbarRef}
 				className="flex fixed inset-0 select-none touch-none opacity-0 shadow-2xl animate-fade-in z-999999999 backdrop-blur-sm rounded-[7px] border border-border-outside"
@@ -345,11 +212,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 							folders={folders}
 							isMinimised={isMinimised}
 							onCreateFolder={handleCreateFolder}
-							onFolderSelect={handleFolderSelect}
+							onFolderSelect={setCurrentFolderId}
 						/>
 						<Separator />
 					</div>
-					{/* Image preview panel - visible when viewing images */}
+
 					{isPreviewOpen && capturedImages.length > 0 && (
 						<ImagePreviewPanel
 							images={capturedImages}
@@ -357,7 +224,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 							onRemoveImage={handleRemoveImage}
 						/>
 					)}
-					{/* Floating thumbnail - visible when maximised with captured images */}
+
 					{!isMinimised && capturedImages.length > 0 && (
 						<div
 							className="absolute"
@@ -373,12 +240,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 							<CapturedThumbnails
 								images={capturedImages}
 								onClick={handleThumbnailClick}
-								onRemove={handleRemoveLatestImage}
+								onRemove={removeLatestImage}
 								onSave={handleSaveImages}
 								isSaving={isSavingImages}
 							/>
 						</div>
 					)}
+
 					<div className="flex flex-1 max-h-9 min-h-9 overflow-hidden">
 						<ButtonGroup>
 							<Button
@@ -388,7 +256,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 									!isMinimised && "rounded-tl-none",
 									isInspecting && "text-primary hover:text-primary",
 								)}
-								onClick={() => setIsInspecting(!isInspecting)}
+								onClick={toggleIsInspecting}
 							>
 								<Camera />
 							</Button>
@@ -404,6 +272,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 								<ExternalLink />
 							</Button>
 						</ButtonGroup>
+
 						<Button
 							variant="ghost"
 							size="icon"

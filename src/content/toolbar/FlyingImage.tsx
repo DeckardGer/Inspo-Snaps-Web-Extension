@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
 	CAPTURE_ANIMATION_DURATION,
 	THUMBNAIL_SIZE,
 	TOOLBAR_TIMING_FUNCTION,
 } from "@/lib/constants";
-import { getThumbnailTargetPosition } from "@/lib/helpers";
+import { getThumbnailTargetPosition } from "@/lib/positioning";
 import type { Corner, ImageCaptureData } from "@/types";
 
 interface FlyingImageProps {
@@ -14,7 +14,7 @@ interface FlyingImageProps {
 	onAnimationComplete: (id: string, src: string) => void;
 }
 
-export function FlyingImage({
+export const FlyingImage = React.memo<FlyingImageProps>(function FlyingImage({
 	id,
 	captureData,
 	corner,
@@ -56,4 +56,4 @@ export function FlyingImage({
 			}}
 		/>
 	);
-}
+});

@@ -7,7 +7,7 @@ import {
 	THUMBNAIL_SIZE,
 	THUMBNAIL_TOOLBAR_PADDING,
 } from "@/lib/constants";
-import type { Corner, FlattenedFolder, Folder } from "@/types";
+import type { Corner } from "@/types";
 
 // Get the toolbar size based on whether it is minimised
 export const getToolbarSize = (isMinimised: boolean) => {
@@ -144,54 +144,6 @@ export const calculatePosition = (
 	}
 
 	return { x, y };
-};
-
-// Flattens the folder tree for search
-export function flattenFolders(
-	folders: Folder[],
-	path: string[] = [],
-	depth: number = 0,
-): FlattenedFolder[] {
-	const result: FlattenedFolder[] = [];
-
-	for (const folder of folders) {
-		const currentPath = [...path, folder.name];
-		result.push({ folder, path: currentPath, depth });
-
-		if (folder.folders.length > 0) {
-			result.push(...flattenFolders(folder.folders, currentPath, depth + 1));
-		}
-	}
-
-	return result;
-}
-
-// Linear interpolation between two values
-export const lerp = (start: number, end: number, t: number): number => {
-	return start + (end - start) * t;
-};
-
-export const throttle = <E>(
-	callback: (e?: E) => void,
-	delay: number,
-): ((e?: E) => void) => {
-	let lastCall = 0;
-
-	return (e?: E) => {
-		const now = Date.now();
-
-		if (now - lastCall >= delay) {
-			lastCall = now;
-			return callback(e);
-		}
-
-		return undefined;
-	};
-};
-
-// Ease-out cubic for smooth deceleration
-export const easeOutCubic = (t: number): number => {
-	return 1 - (1 - t) ** 3;
 };
 
 // Calculate the target position for a flying thumbnail relative to toolbar

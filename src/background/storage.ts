@@ -1,3 +1,4 @@
+import { generateId } from "@/lib/id";
 import type { StoredFolder, StoredImage } from "@/types";
 
 const DB_NAME = "inspo-snaps-db";
@@ -100,7 +101,7 @@ export const createFolder = async (
 	const db = await openDB();
 	const now = Date.now();
 	const folder: StoredFolder = {
-		id: `folder-${now}-${Math.random().toString(36).slice(2, 9)}`,
+		id: generateId("folder"),
 		name,
 		parentId,
 		createdAt: now,
@@ -249,7 +250,7 @@ export const saveImage = async (
 	const now = Date.now();
 	const storedImage: StoredImage = {
 		...image,
-		id: `image-${now}-${Math.random().toString(36).slice(2, 9)}`,
+		id: generateId("image"),
 		createdAt: now,
 	};
 

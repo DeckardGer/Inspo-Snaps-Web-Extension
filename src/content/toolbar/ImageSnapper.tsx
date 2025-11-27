@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { lerp, throttle } from "@/lib/helpers";
+import { lerp } from "@/lib/math";
+import { throttle } from "@/lib/performance";
 import { cn } from "@/lib/utils";
 import type { ImageCaptureData } from "@/types";
 
@@ -33,7 +34,6 @@ export const ImageSnapper = ({
 	const refRafId = useRef<number>(0);
 	const refTimeout = useRef<ReturnType<typeof setTimeout>>();
 	const refLastFrameTime = useRef<number>(0);
-	const refIsFadingOut = useRef(false);
 
 	// Get the shadow root host element on mount
 	useEffect(() => {
@@ -154,39 +154,6 @@ export const ImageSnapper = ({
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			refCurrentRect.current = null;
 			refLastHoveredElement.current = null;
-			canvas.classList.remove("fade-in");
-			refIsFadingOut.current = false;
-		};
-
-		// Start fade out transition
-		const startFadeOut = (onComplete?: () => void) => {
-			if (refIsFadingOut.current) return;
-
-			const handleTransitionEnd = (e: TransitionEvent) => {
-				if (e.propertyName !== "opacity" || !refIsFadingOut.current) {
-					return;
-				}
-				canvas.removeEventListener("transitionend", handleTransitionEnd);
-				cleanupCanvas();
-				onComplete?.();
-			};
-
-			canvas.addEventListener("transitionend", handleTransitionEnd);
-
-			refIsFadingOut.current = true;
-			canvas.classList.remove("fade-in");
-			requestAnimationFrame(() => {
-				canvas.classList.add("fade-out");
-			});
-		};
-
-		// Start fade in transition
-		const startFadeIn = () => {
-			refIsFadingOut.current = false;
-			canvas.classList.remove("fade-out");
-			requestAnimationFrame(() => {
-				canvas.classList.add("fade-in");
-			});
 		};
 
 		// Draw hover overlay for an element
@@ -205,13 +172,12 @@ export const ImageSnapper = ({
 		updateCanvasSize();
 
 		if (!isInspecting) {
-			startFadeOut();
+			cleanupCanvas();
 			return;
 		}
 
 		// Redraw existing rectangle if we have one (e.g., after effect re-runs due to onImageCapture change)
 		if (refCurrentRect.current) {
-			startFadeIn();
 			drawRect();
 		}
 
@@ -235,9 +201,8 @@ export const ImageSnapper = ({
 				if (element === refLastHoveredElement.current) return;
 
 				refLastHoveredElement.current = element;
-				startFadeIn();
 				drawHoverOverlay(element);
-				// Don't fade out when moving away - preserve the last highlighted image
+				// Don't clear when moving away - preserve the last highlighted image
 				// } else {
 				// 	// Mouse is not over a valid element
 				// 	if (!refCurrentRect.current || refIsFadingOut.current) return;
@@ -306,7 +271,6 @@ export const ImageSnapper = ({
 			className={cn(
 				"fixed top-0 left-0 w-screen h-screen",
 				"z-99999999",
-				"opacity-0 transition-opacity duration-200",
 				isInspecting
 					? "pointer-events-auto cursor-default"
 					: "pointer-events-none",

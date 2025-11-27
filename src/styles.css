@@ -5,7 +5,7 @@
 
 @theme {
 	--animate-fade-in: fade-in 0.3s ease-in forwards;
-	--animate-fade-out: fade-out 0.2s ease-out forwards;
+	--animate-fade-out: fade-out 0.3s ease-out forwards;
 
 	@keyframes fade-in {
 		0% {
@@ -153,15 +153,6 @@
 }
 
 @layer components {
-	/* Canvas overlay fade transitions */
-	.fade-in {
-		opacity: 1 !important;
-	}
-
-	.fade-out {
-		opacity: 0 !important;
-	}
-
 	.command-bar [cmdk-root] {
 		display: flex;
 		flex-direction: column;
