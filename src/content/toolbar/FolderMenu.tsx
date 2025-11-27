@@ -345,7 +345,7 @@ function SearchView({
 							onSelect={() => onSelect(folder.id)}
 						>
 							<FolderIcon size={18} />
-							{folder.name}
+							<span cmdk-item-text="">{folder.name}</span>
 							{parentPath.length > 0 && (
 								<div cmdk-shortcuts="">
 									{parentPath.map((dir, idx) => (
@@ -382,7 +382,7 @@ function FoldersView({
 							onSelect={() => onSelect(folder.id)}
 						>
 							<FolderIcon size={18} />
-							{folder.name}
+							<span cmdk-item-text="">{folder.name}</span>
 							{folder.folders.length > 0 && (
 								<div cmdk-shortcuts="">{folder.folders.length}</div>
 							)}
@@ -400,7 +400,7 @@ function Actions({ onPrepareAddFolder }: { onPrepareAddFolder: () => void }) {
 		<Command.Group heading="Actions">
 			<Command.Item onSelect={onPrepareAddFolder}>
 				<Plus size={18} />
-				New Folder...
+				<span cmdk-item-text="">New Folder...</span>
 			</Command.Item>
 		</Command.Group>
 	);

@@ -195,6 +195,7 @@
 		will-change: background, color;
 		transition: all 150ms ease;
 		transition-property: none;
+		min-width: 0;
 	}
 
 	.command-bar [cmdk-item][data-selected="true"] {
@@ -219,6 +220,15 @@
 	.command-bar [cmdk-item] svg {
 		width: 18px;
 		height: 18px;
+		flex-shrink: 0;
+	}
+
+	.command-bar [cmdk-item-text] {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		flex: 1;
+		min-width: 0;
 	}
 
 	.command-bar [cmdk-list] {
@@ -245,11 +255,19 @@
 		line-height: 1;
 		color: var(--gray11);
 		background: var(--gray4);
+		flex-shrink: 0;
 	}
 
 	.command-bar [cmdk-shortcuts] svg {
 		width: 12px;
 		height: 12px;
+	}
+
+	.command-bar [cmdk-shortcuts] span {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 150px;
 	}
 
 	.command-bar *:not([hidden]) + [cmdk-group] {
@@ -274,5 +292,23 @@
 		height: 48px;
 		white-space: pre-wrap;
 		color: var(--gray11);
+	}
+
+	/* Breadcrumb truncation */
+	[data-slot="breadcrumb-list"] {
+		min-width: 0;
+	}
+
+	[data-slot="breadcrumb-item"] {
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	[data-slot="breadcrumb-link"],
+	[data-slot="breadcrumb-page"] {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		min-width: 0;
 	}
 }
