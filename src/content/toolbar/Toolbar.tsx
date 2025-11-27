@@ -14,6 +14,7 @@ import { FlyingImage } from "@/content/toolbar/FlyingImage";
 import { FolderMenu } from "@/content/toolbar/FolderMenu";
 import { ImagePreviewPanel } from "@/content/toolbar/ImagePreviewPanel";
 import { ImageSnapper } from "@/content/toolbar/ImageSnapper";
+import { Notification } from "@/content/toolbar/Notification";
 import { useFolderSync } from "@/hooks/useFolderSync";
 import { useImageCapture } from "@/hooks/useImageCapture";
 import { useToolbarDrag } from "@/hooks/useToolbarDrag";
@@ -49,10 +50,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		corner,
 		isInspecting,
 		isPreviewOpen,
+		notification,
 		setIsMinimised,
 		setCorner,
 		toggleIsInspecting,
 		setIsPreviewOpen,
+		showNotification,
+		dismissNotification,
 	} = useToolbarStore();
 
 	const {
@@ -108,12 +112,59 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	const handleCreateFolder = useCallback(
 		async (name: string, parentId: string | null): Promise<string> => {
 			const folderService = getFolderService();
-			const newFolder = await folderService.createFolder(name, parentId);
-			const updatedFolders = await folderService.getFolders();
-			setFolders(updatedFolders);
-			return newFolder.id;
+			try {
+				const newFolder = await folderService.createFolder(name, parentId);
+				const updatedFolders = await folderService.getFolders();
+				setFolders(updatedFolders);
+				return newFolder.id;
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: "Failed to create folder. Please try again.";
+				showNotification(message, "error");
+				throw error;
+			}
 		},
-		[setFolders],
+		[setFolders, showNotification],
+	);
+
+	const handleUpdateFolder = useCallback(
+		async (id: string, name: string): Promise<void> => {
+			const folderService = getFolderService();
+			try {
+				await folderService.updateFolder(id, { name });
+				const updatedFolders = await folderService.getFolders();
+				setFolders(updatedFolders);
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: "Failed to rename folder. Please try again.";
+				showNotification(message, "error");
+				throw error;
+			}
+		},
+		[setFolders, showNotification],
+	);
+
+	const handleDeleteFolder = useCallback(
+		async (id: string): Promise<void> => {
+			const folderService = getFolderService();
+			try {
+				await folderService.deleteFolder(id);
+				const updatedFolders = await folderService.getFolders();
+				setFolders(updatedFolders);
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: "Failed to delete folder. Please try again.";
+				showNotification(message, "error");
+				throw error;
+			}
+		},
+		[setFolders, showNotification],
 	);
 
 	const handleSaveImages = useCallback(async () => {
@@ -134,6 +185,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 			setIsPreviewOpen(false);
 		} catch (error) {
 			console.error("[Toolbar] Failed to save images:", error);
+			const message =
+				error instanceof Error
+					? error.message
+					: "Failed to save images. Please try again.";
+			showNotification(message, "error");
 			// Error stays in UI state for user to retry
 		} finally {
 			setIsSavingImages(false);
@@ -145,6 +201,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		setIsSavingImages,
 		clearCapturedImages,
 		setIsPreviewOpen,
+		showNotification,
 	]);
 
 	const toggleFolders = useCallback(() => {
@@ -207,14 +264,30 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 				}}
 			>
 				<div className="flex flex-1 flex-col bg-background rounded-md overflow-hidden relative">
-					<div className="flex flex-1 flex-col overflow-hidden">
+					<div className="relative flex flex-1 flex-col overflow-hidden">
 						<FolderMenu
 							folders={folders}
 							isMinimised={isMinimised}
 							onCreateFolder={handleCreateFolder}
+							onUpdateFolder={handleUpdateFolder}
+							onDeleteFolder={handleDeleteFolder}
 							onFolderSelect={setCurrentFolderId}
 						/>
 						<Separator />
+
+						{notification && (
+							<div
+								className="absolute bottom-2 left-1/2 -translate-x-1/2 z-50"
+								style={{
+									maxWidth: MAXIMISED_WIDTH - 16,
+								}}
+							>
+								<Notification
+									notification={notification}
+									onDismiss={dismissNotification}
+								/>
+							</div>
+						)}
 					</div>
 
 					{isPreviewOpen && capturedImages.length > 0 && (

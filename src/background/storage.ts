@@ -1,3 +1,4 @@
+import { WEBSITE_URL } from "@/lib/constants";
 import { generateId } from "@/lib/id";
 import type { StoredFolder, StoredImage } from "@/types";
 
@@ -169,30 +170,39 @@ export const deleteFolder = async (id: string): Promise<void> => {
 	};
 	findChildren(id);
 
-	// Delete all folders and their images
+	// Check if any of the folders contain images
 	const db = await openDB();
 	try {
-		return await new Promise<void>((resolve, reject) => {
-			const transaction = db.transaction(
-				[STORES.FOLDERS, STORES.IMAGES],
-				"readwrite",
-			);
-			const foldersStore = transaction.objectStore(STORES.FOLDERS);
-			const imagesStore = transaction.objectStore(STORES.IMAGES);
+		const foldersToCheck = Array.from(idsToDelete);
+		let totalImageCount = 0;
 
-			// Delete images in these folders
-			const imageIndex = imagesStore.index("folderId");
-			for (const folderId of idsToDelete) {
-				const imageRequest = imageIndex.openCursor(IDBKeyRange.only(folderId));
-				imageRequest.onsuccess = (event) => {
-					const cursor = (event.target as IDBRequest<IDBCursorWithValue>)
-						.result;
-					if (cursor) {
-						cursor.delete();
-						cursor.continue();
-					}
-				};
+		for (const folderId of foldersToCheck) {
+			const count = await new Promise<number>((resolve, reject) => {
+				const transaction = db.transaction(STORES.IMAGES, "readonly");
+				const imagesStore = transaction.objectStore(STORES.IMAGES);
+				const imageIndex = imagesStore.index("folderId");
+				const countRequest = imageIndex.count(IDBKeyRange.only(folderId));
+
+				countRequest.onerror = () => reject(countRequest.error);
+				countRequest.onsuccess = () => resolve(countRequest.result);
+			});
+
+			totalImageCount += count;
+
+			// Early exit if we found any images
+			if (totalImageCount > 0) {
+				break;
 			}
+		}
+
+		if (totalImageCount > 0) {
+			throw new Error(`Visit ${WEBSITE_URL} to delete folders with images.`);
+		}
+
+		// Delete all folders (no images to delete since we verified none exist)
+		return await new Promise<void>((resolve, reject) => {
+			const transaction = db.transaction(STORES.FOLDERS, "readwrite");
+			const foldersStore = transaction.objectStore(STORES.FOLDERS);
 
 			// Delete folders
 			for (const folderId of idsToDelete) {
