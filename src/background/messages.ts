@@ -1,7 +1,8 @@
 import browser from "webextension-polyfill";
+import { authClient } from "@/auth/auth-client";
 import * as storage from "@/background/storage";
 import { MessageType } from "@/types";
-import type { Message, ServiceResponse } from "@/types/messages";
+import type { AuthSession, Message, ServiceResponse } from "@/types/messages";
 
 /**
  * Handle messages from content scripts and route to appropriate storage operations
@@ -71,6 +72,77 @@ export const handleMessage = async (
 				const image = await storage.moveImageToFolder(imageId, folderId);
 				await broadcastImagesChanged(sender.tab?.id);
 				return { success: true, data: { image } };
+			}
+
+			// Auth operations (proxied through background to avoid CORS in content scripts)
+			case "AUTH_GET_SESSION": {
+				const { data, error } = await authClient.getSession();
+				if (error) {
+					return {
+						success: false,
+						error: {
+							message: error.message || "Failed to get session",
+							code: "AUTH_ERROR",
+						},
+					};
+				}
+				return {
+					success: true,
+					data: { session: data as AuthSession | null },
+				};
+			}
+
+			// API proxy (all API requests go through background to avoid CORS)
+			case "API_REQUEST": {
+				const { endpoint, method = "GET", body } = message.payload;
+				const baseUrl = "http://localhost:3000";
+
+				try {
+					const response = await fetch(`${baseUrl}${endpoint}`, {
+						method,
+						headers: {
+							"Content-Type": "application/json",
+						},
+						credentials: "include", // Include cookies for auth
+						body: body ? JSON.stringify(body) : undefined,
+					});
+
+					// Try to parse JSON, fall back to text
+					let data: unknown;
+					const contentType = response.headers.get("content-type");
+					if (contentType?.includes("application/json")) {
+						data = await response.json();
+					} else {
+						data = await response.text();
+					}
+
+					// Return error for non-2xx responses
+					if (!response.ok) {
+						return {
+							success: false,
+							error: {
+								message:
+									typeof data === "object" && data !== null && "message" in data
+										? String((data as { message: string }).message)
+										: `Request failed with status ${response.status}`,
+								code: `HTTP_${response.status}`,
+							},
+						};
+					}
+
+					return {
+						success: true,
+						data: { data, status: response.status },
+					};
+				} catch (error) {
+					return {
+						success: false,
+						error: {
+							message: error instanceof Error ? error.message : "Network error",
+							code: "NETWORK_ERROR",
+						},
+					};
+				}
 			}
 
 			// Broadcast events (no response needed from content scripts)

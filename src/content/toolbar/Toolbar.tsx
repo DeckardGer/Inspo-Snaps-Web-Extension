@@ -15,6 +15,7 @@ import { FolderMenu } from "@/content/toolbar/FolderMenu";
 import { ImagePreviewPanel } from "@/content/toolbar/ImagePreviewPanel";
 import { ImageSnapper } from "@/content/toolbar/ImageSnapper";
 import { Notification } from "@/content/toolbar/Notification";
+import { useAuthSession } from "@/hooks/useAuthSession";
 import { useFolderSync } from "@/hooks/useFolderSync";
 import { useImageCapture } from "@/hooks/useImageCapture";
 import { useToolbarDrag } from "@/hooks/useToolbarDrag";
@@ -43,6 +44,9 @@ interface ToolbarProps {
 
 export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	const toolbarRef = useRef<HTMLDivElement>(null);
+
+	// Auth session (fetched via background script to avoid CORS)
+	const { session, isLoading: isAuthLoading } = useAuthSession();
 
 	// Stores
 	const {

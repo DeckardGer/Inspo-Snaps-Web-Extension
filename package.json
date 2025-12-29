@@ -11,6 +11,7 @@
 		"@radix-ui/react-separator": "^1.1.8",
 		"@radix-ui/react-slot": "^1.2.4",
 		"@tailwindcss/vite": "^4.1.17",
+		"better-auth": "^1.4.9",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"cmdk": "^1.1.1",
@@ -33,5 +34,10 @@
 		"vite": "^5.0.0",
 		"vite-plugin-web-extension": "^4.0.0",
 		"webextension-polyfill": "^0.10.0"
+	},
+	"manifest": {
+		"host_permissions": [
+			"http://localhost:3000"
+		]
 	}
 }
