@@ -1,4 +1,9 @@
-import { Loader2, Save, X } from "lucide-react";
+import {
+	Cancel01Icon,
+	FloppyDiskIcon,
+	Loading01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,7 +75,7 @@ export const CapturedThumbnails = React.memo<CapturedThumbnailsProps>(
 						className="absolute top-[-6px] left-[-6px] bg-primary hover:bg-primary text-white h-5 w-5 rounded-full"
 						onClick={handleRemoveClick}
 					>
-						<X size={8} />
+						<HugeiconsIcon icon={Cancel01Icon} size={8} strokeWidth={2} />
 					</Button>
 				) : (
 					count > 1 && (
@@ -87,9 +92,14 @@ export const CapturedThumbnails = React.memo<CapturedThumbnailsProps>(
 						disabled={isSaving}
 					>
 						{isSaving ? (
-							<Loader2 className="animate-spin" size={16} />
+							<HugeiconsIcon
+								icon={Loading01Icon}
+								size={16}
+								strokeWidth={2}
+								className="animate-spin"
+							/>
 						) : (
-							<Save size={16} />
+							<HugeiconsIcon icon={FloppyDiskIcon} size={16} strokeWidth={2} />
 						)}
 					</Button>
 				)}

@@ -1,4 +1,10 @@
-import { AlertCircle, CheckCircle, Info, X } from "lucide-react";
+import {
+	AlertCircleIcon,
+	Cancel01Icon,
+	CheckmarkCircle01Icon,
+	InformationCircleIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -34,11 +40,32 @@ export const Notification = ({
 	const getIcon = () => {
 		switch (notification.type) {
 			case "error":
-				return <AlertCircle size={18} className="text-destructive" />;
+				return (
+					<HugeiconsIcon
+						icon={AlertCircleIcon}
+						size={18}
+						strokeWidth={2}
+						className="text-destructive"
+					/>
+				);
 			case "success":
-				return <CheckCircle size={18} className="text-green-500" />;
+				return (
+					<HugeiconsIcon
+						icon={CheckmarkCircle01Icon}
+						size={18}
+						strokeWidth={2}
+						className="text-green-500"
+					/>
+				);
 			case "info":
-				return <Info size={18} className="text-blue-500" />;
+				return (
+					<HugeiconsIcon
+						icon={InformationCircleIcon}
+						size={18}
+						strokeWidth={2}
+						className="text-blue-500"
+					/>
+				);
 		}
 	};
 
@@ -70,7 +97,7 @@ export const Notification = ({
 				className="h-5 w-5 rounded-full hover:bg-transparent ml-1"
 				onClick={onDismiss}
 			>
-				<X size={12} />
+				<HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={2} />
 			</Button>
 		</div>
 	);

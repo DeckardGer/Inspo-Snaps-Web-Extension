@@ -1,14 +1,15 @@
-import { Command } from "cmdk";
 import {
-	ArrowLeft,
-	ChevronRight,
-	Folder as FolderIcon,
-	Home,
-	Loader2,
-	Pencil,
-	Plus,
-	Trash2,
-} from "lucide-react";
+	Add01Icon,
+	ArrowLeft01Icon,
+	ArrowRight01Icon,
+	Delete01Icon,
+	Edit01Icon,
+	Folder01Icon,
+	Home01Icon,
+	Loading01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Command } from "cmdk";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Breadcrumb,
@@ -266,7 +267,12 @@ export const FolderMenu = memo(function FolderMenu({
 	if (folders === null) {
 		return (
 			<div className="flex flex-1 items-center justify-center">
-				<Loader2 className="animate-spin text-muted-foreground" size={24} />
+				<HugeiconsIcon
+					icon={Loading01Icon}
+					size={24}
+					strokeWidth={2}
+					className="animate-spin text-muted-foreground"
+				/>
 			</div>
 		);
 	}
@@ -292,7 +298,7 @@ export const FolderMenu = memo(function FolderMenu({
 							className="w-7 h-7 ml-[9px]"
 							onClick={resetToNormalState}
 						>
-							<ArrowLeft size={14} />
+							<HugeiconsIcon icon={ArrowLeft01Icon} size={14} strokeWidth={2} />
 						</Button>
 					)}
 					<Command.Input
@@ -312,9 +318,11 @@ export const FolderMenu = memo(function FolderMenu({
 						)}
 					/>
 					{isSaving && (
-						<Loader2
-							className="animate-spin text-muted-foreground mr-3"
+						<HugeiconsIcon
+							icon={Loading01Icon}
 							size={16}
+							strokeWidth={2}
+							className="animate-spin text-muted-foreground mr-3"
 						/>
 					)}
 				</div>
@@ -338,7 +346,13 @@ export const FolderMenu = memo(function FolderMenu({
 											<BreadcrumbItem>
 												{isLast ? (
 													<BreadcrumbPage className="flex items-center gap-1.5">
-														{isHome && <Home size={14} />}
+														{isHome && (
+															<HugeiconsIcon
+																icon={Home01Icon}
+																size={14}
+																strokeWidth={2}
+															/>
+														)}
 														{item.name}
 													</BreadcrumbPage>
 												) : isBeingRenamed ? (
@@ -350,7 +364,13 @@ export const FolderMenu = memo(function FolderMenu({
 														onClick={() => navigateToBreadcrumb(item.index)}
 														className="cursor-pointer flex items-center gap-1.5"
 													>
-														{isHome && <Home size={14} />}
+														{isHome && (
+															<HugeiconsIcon
+																icon={Home01Icon}
+																size={14}
+																strokeWidth={2}
+															/>
+														)}
 														{item.name}
 													</BreadcrumbLink>
 												)}
@@ -432,14 +452,21 @@ function SearchView({
 							value={`${folder.name} ${path.join(" ")}`}
 							onSelect={() => onSelect(folder.id)}
 						>
-							<FolderIcon size={18} />
+							<HugeiconsIcon icon={Folder01Icon} size={18} strokeWidth={2} />
 							<span cmdk-item-text="">{folder.name}</span>
 							{parentPath.length > 0 && (
 								<div cmdk-shortcuts="">
 									{parentPath.map((dir, idx) => (
 										// biome-ignore lint/suspicious/noArrayIndexKey: directory path has no unique ID
 										<span key={idx} className="inline-flex items-center">
-											{idx > 0 && <ChevronRight size={12} className="mx-0.5" />}
+											{idx > 0 && (
+												<HugeiconsIcon
+													icon={ArrowRight01Icon}
+													size={12}
+													strokeWidth={2}
+													className="mx-0.5"
+												/>
+											)}
 											{dir}
 										</span>
 									))}
@@ -477,7 +504,7 @@ function FoldersView({
 							value={folder.name}
 							onSelect={() => onSelect(folder.id)}
 						>
-							<FolderIcon size={18} />
+							<HugeiconsIcon icon={Folder01Icon} size={18} strokeWidth={2} />
 							<span cmdk-item-text="">{folder.name}</span>
 							{folder.folders.length > 0 && (
 								<div cmdk-shortcuts="">{folder.folders.length}</div>
@@ -510,17 +537,17 @@ function Actions({
 	return (
 		<Command.Group heading="Actions">
 			<Command.Item onSelect={onPrepareAddFolder}>
-				<Plus size={18} />
+				<HugeiconsIcon icon={Add01Icon} size={18} strokeWidth={2} />
 				<span cmdk-item-text="">New Folder...</span>
 			</Command.Item>
 			{currentFolderId && (
 				<>
 					<Command.Item onSelect={onPrepareRenameFolder}>
-						<Pencil size={18} />
+						<HugeiconsIcon icon={Edit01Icon} size={18} strokeWidth={2} />
 						<span cmdk-item-text="">Rename Folder...</span>
 					</Command.Item>
 					<Command.Item onSelect={onDeleteFolder}>
-						<Trash2 size={18} />
+						<HugeiconsIcon icon={Delete01Icon} size={18} strokeWidth={2} />
 						<span cmdk-item-text="">Delete Folder...</span>
 					</Command.Item>
 				</>

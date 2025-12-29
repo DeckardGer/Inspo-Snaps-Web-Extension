@@ -1,4 +1,5 @@
-import { X } from "lucide-react";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,7 +71,7 @@ export function ImagePreviewPanel({
 				className="absolute top-2 right-2 z-10 h-9 w-9"
 				onClick={handleClose}
 			>
-				<X />
+				<HugeiconsIcon icon={Cancel01Icon} size={18} strokeWidth={2} />
 			</Button>
 
 			<Carousel
@@ -89,7 +90,7 @@ export function ImagePreviewPanel({
 									className="absolute top-[-6px] left-[-6px] bg-primary hover:bg-primary text-white h-5 w-5 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-opacity"
 									onClick={() => onRemoveImage(image.id)}
 								>
-									<X size={8} />
+									<HugeiconsIcon icon={Cancel01Icon} size={8} strokeWidth={2} />
 								</Button>
 								<img
 									src={image.src}

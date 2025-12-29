@@ -29,4 +29,18 @@ export default defineConfig({
 			"@": fileURLToPath(new URL("./src", import.meta.url)),
 		},
 	},
+	build: {
+		rollupOptions: {
+			onwarn(warning, warn) {
+				// Suppress annotation warnings from @hugeicons packages
+				if (
+					warning.code === "INVALID_ANNOTATION" &&
+					warning.message.includes("@hugeicons")
+				) {
+					return;
+				}
+				warn(warning);
+			},
+		},
+	},
 });

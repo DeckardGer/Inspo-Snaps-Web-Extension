@@ -1,10 +1,11 @@
 import {
-	Camera,
-	ExternalLink,
-	Folder as FolderIcon,
-	GripVertical,
-	LogIn,
-} from "lucide-react";
+	Camera01Icon,
+	DragDropVerticalIcon,
+	Folder01Icon,
+	LinkSquare02Icon,
+	Login01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import type React from "react";
 import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -337,7 +338,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 									className="rounded-r-none"
 									onClick={openLogin}
 								>
-									<LogIn />
+									<HugeiconsIcon icon={Login01Icon} size={18} strokeWidth={2} />
 									Login
 								</Button>
 							</ButtonGroup>
@@ -352,10 +353,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 									)}
 									onClick={toggleIsInspecting}
 								>
-									<Camera />
+									<HugeiconsIcon
+										icon={Camera01Icon}
+										size={18}
+										strokeWidth={2}
+									/>
 								</Button>
 								<Button variant="ghost" size="icon" onClick={toggleFolders}>
-									<FolderIcon />
+									<HugeiconsIcon
+										icon={Folder01Icon}
+										size={18}
+										strokeWidth={2}
+									/>
 								</Button>
 								<Button
 									variant="ghost"
@@ -363,7 +372,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 									className="rounded-r-none"
 									onClick={openWebsite}
 								>
-									<ExternalLink />
+									<HugeiconsIcon
+										icon={LinkSquare02Icon}
+										size={18}
+										strokeWidth={2}
+									/>
 								</Button>
 							</ButtonGroup>
 						)}
@@ -378,7 +391,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 							onMouseDown={handleMouseDown}
 							aria-label="Drag toolbar"
 						>
-							<GripVertical size={16} />
+							<HugeiconsIcon
+								icon={DragDropVerticalIcon}
+								size={16}
+								strokeWidth={3.5}
+							/>
 						</Button>
 					</div>
 				</div>
