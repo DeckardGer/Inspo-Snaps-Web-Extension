@@ -9,7 +9,7 @@ import {
 import { normaliseTailwind } from "@/lib/utils";
 import { useToolbarStore } from "@/store/toolbarStore";
 import styles from "@/styles.css?inline";
-import { type Corner, type Message, MessageType } from "@/types";
+import type { Corner, Message } from "@/types";
 
 // Module state
 let rootContainer: HTMLElement | null = null;
@@ -81,13 +81,13 @@ const hideToolbar = () => {
 
 const setupMessageListener = () => {
 	browser.runtime.onMessage.addListener((message: Message) => {
-		if (message.type === MessageType.SITE_STATE_UPDATED) {
+		if (message.type === "SITE_STATE_UPDATED") {
 			if (message.payload) {
 				showToolbar();
 			} else {
 				hideToolbar();
 			}
-		} else if (message.type === MessageType.SAVE_IMAGE) {
+		} else if (message.type === "SAVE_IMAGE") {
 			const srcUrl = message.payload as string;
 
 			// Use the stored right-clicked element, or fall back to center of screen

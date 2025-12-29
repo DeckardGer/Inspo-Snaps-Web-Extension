@@ -1,8 +1,59 @@
 import browser from "webextension-polyfill";
 import { authClient } from "@/auth/auth-client";
 import * as storage from "@/background/storage";
-import { MessageType } from "@/types";
 import type { AuthSession, Message, ServiceResponse } from "@/types/messages";
+
+const SESSION_CACHE_KEY = "authSession";
+
+interface CachedSession {
+	session: AuthSession | null;
+	cachedAt: number;
+}
+
+/**
+ * Check if a session is expired
+ */
+const isSessionExpired = (session: AuthSession | null): boolean => {
+	if (!session) return true;
+	const expiresAt = new Date(session.session.expiresAt).getTime();
+	return Date.now() >= expiresAt;
+};
+
+/**
+ * Get cached session from storage (returns null if expired)
+ */
+const getCachedSession = async (): Promise<CachedSession | null> => {
+	const result = await browser.storage.session.get(SESSION_CACHE_KEY);
+	const cached = result[SESSION_CACHE_KEY] as CachedSession | undefined;
+
+	if (!cached) return null;
+
+	// Return null if session is expired
+	if (isSessionExpired(cached.session)) {
+		await clearCachedSession();
+		return null;
+	}
+
+	return cached;
+};
+
+/**
+ * Cache session to storage
+ */
+const cacheSession = async (session: AuthSession | null): Promise<void> => {
+	const cached: CachedSession = {
+		session,
+		cachedAt: Date.now(),
+	};
+	await browser.storage.session.set({ [SESSION_CACHE_KEY]: cached });
+};
+
+/**
+ * Clear cached session from storage
+ */
+const clearCachedSession = async (): Promise<void> => {
+	await browser.storage.session.remove(SESSION_CACHE_KEY);
+};
 
 /**
  * Handle messages from content scripts and route to appropriate storage operations
@@ -76,8 +127,24 @@ export const handleMessage = async (
 
 			// Auth operations (proxied through background to avoid CORS in content scripts)
 			case "AUTH_GET_SESSION": {
+				const forceRefresh = message.payload?.forceRefresh ?? false;
+
+				// Check cache first (unless force refresh)
+				if (!forceRefresh) {
+					const cached = await getCachedSession();
+					if (cached) {
+						return {
+							success: true,
+							data: { session: cached.session },
+						};
+					}
+				}
+
+				// Fetch from server if not cached or force refresh
 				const { data, error } = await authClient.getSession();
 				if (error) {
+					// Clear cache on auth error (session might be stale)
+					await clearCachedSession();
 					return {
 						success: false,
 						error: {
@@ -86,10 +153,19 @@ export const handleMessage = async (
 						},
 					};
 				}
+
+				// Cache the session
+				await cacheSession(data as AuthSession | null);
+
 				return {
 					success: true,
 					data: { session: data as AuthSession | null },
 				};
+			}
+
+			case "AUTH_CLEAR_SESSION": {
+				await clearCachedSession();
+				return { success: true, data: undefined };
 			}
 
 			// API proxy (all API requests go through background to avoid CORS)
@@ -190,7 +266,7 @@ const broadcastFoldersChanged = async (senderTabId?: number) => {
 		if (tab.id && tab.id !== senderTabId) {
 			try {
 				await browser.tabs.sendMessage(tab.id, {
-					type: MessageType.FOLDERS_CHANGED,
+					type: "FOLDERS_CHANGED",
 				});
 			} catch (error) {
 				// Distinguish expected vs unexpected errors
@@ -229,7 +305,7 @@ const broadcastImagesChanged = async (senderTabId?: number) => {
 		if (tab.id && tab.id !== senderTabId) {
 			try {
 				await browser.tabs.sendMessage(tab.id, {
-					type: MessageType.IMAGES_CHANGED,
+					type: "IMAGES_CHANGED",
 				});
 			} catch (error) {
 				// Distinguish expected vs unexpected errors

@@ -3,6 +3,7 @@ import {
 	ExternalLink,
 	Folder as FolderIcon,
 	GripVertical,
+	LogIn,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef } from "react";
@@ -224,7 +225,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	}, [isMinimised, corner, setIsMinimised, updatePosition]);
 
 	const openWebsite = useCallback(() => {
-		window.open("https://insposnaps.com", "_blank");
+		window.open("https://insposnaps.com/my-folders", "_blank");
+	}, []);
+
+	const openLogin = useCallback(() => {
+		window.open("http://localhost:3000/login", "_blank");
 	}, []);
 
 	// Listen for context menu image saves
@@ -325,30 +330,43 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 					)}
 
 					<div className="flex flex-1 max-h-9 min-h-9 overflow-hidden">
-						<ButtonGroup>
-							<Button
-								variant="ghost"
-								size="icon"
-								className={cn(
-									!isMinimised && "rounded-tl-none",
-									isInspecting && "text-primary hover:text-primary",
-								)}
-								onClick={toggleIsInspecting}
-							>
-								<Camera />
-							</Button>
-							<Button variant="ghost" size="icon" onClick={toggleFolders}>
-								<FolderIcon />
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="rounded-r-none"
-								onClick={openWebsite}
-							>
-								<ExternalLink />
-							</Button>
-						</ButtonGroup>
+						{!isAuthLoading && !session ? (
+							<ButtonGroup className="items-center">
+								<Button
+									variant="ghost"
+									className="rounded-r-none"
+									onClick={openLogin}
+								>
+									<LogIn />
+									Login
+								</Button>
+							</ButtonGroup>
+						) : (
+							<ButtonGroup>
+								<Button
+									variant="ghost"
+									size="icon"
+									className={cn(
+										!isMinimised && "rounded-tl-none",
+										isInspecting && "text-primary hover:text-primary",
+									)}
+									onClick={toggleIsInspecting}
+								>
+									<Camera />
+								</Button>
+								<Button variant="ghost" size="icon" onClick={toggleFolders}>
+									<FolderIcon />
+								</Button>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="rounded-r-none"
+									onClick={openWebsite}
+								>
+									<ExternalLink />
+								</Button>
+							</ButtonGroup>
+						)}
 
 						<Button
 							variant="ghost"

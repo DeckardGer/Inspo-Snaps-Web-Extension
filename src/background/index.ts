@@ -2,7 +2,6 @@ import browser from "webextension-polyfill";
 import { handleMessage } from "@/background/messages";
 import { ENABLED_SITES_KEY } from "@/lib/constants";
 import type { Message } from "@/types";
-import { MessageType } from "@/types";
 
 const getEnabledSites = async (): Promise<Record<string, boolean>> => {
 	const stored = await browser.storage.local.get(ENABLED_SITES_KEY);
@@ -33,7 +32,7 @@ browser.action.onClicked.addListener(async (tab) => {
 	const newState = await toggleSite(hostname);
 
 	browser.tabs.sendMessage(tab.id, {
-		type: MessageType.SITE_STATE_UPDATED,
+		type: "SITE_STATE_UPDATED",
 		payload: newState,
 	});
 });
@@ -48,7 +47,7 @@ browser.contextMenus.create({
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
 	if (info.menuItemId === "save-image" && info.srcUrl && tab?.id) {
 		browser.tabs.sendMessage(tab.id, {
-			type: MessageType.SAVE_IMAGE,
+			type: "SAVE_IMAGE",
 			payload: info.srcUrl,
 		});
 	}

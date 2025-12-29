@@ -42,7 +42,8 @@ export type Message =
 			payload: { imageId: string; folderId: string | null };
 	  }
 	// Auth operations (proxied through background script to avoid CORS)
-	| { type: "AUTH_GET_SESSION" }
+	| { type: "AUTH_GET_SESSION"; payload?: { forceRefresh?: boolean } }
+	| { type: "AUTH_CLEAR_SESSION" }
 	// API proxy (all API requests go through background script to avoid CORS)
 	| {
 			type: "API_REQUEST";

@@ -3,7 +3,6 @@ import browser from "webextension-polyfill";
 import { getFolderService } from "@/services/folders";
 import { useFoldersStore } from "@/store/foldersStore";
 import type { Message } from "@/types";
-import { MessageType } from "@/types";
 
 export const useFolderSync = () => {
 	const { setFolders } = useFoldersStore();
@@ -17,11 +16,11 @@ export const useFolderSync = () => {
 	// Listen for changes from other tabs
 	useEffect(() => {
 		const handleMessage = (message: Message) => {
-			if (message.type === MessageType.FOLDERS_CHANGED) {
+			if (message.type === "FOLDERS_CHANGED") {
 				console.log("[Toolbar] Folders changed in another tab, refetching...");
 				const folderService = getFolderService();
 				folderService.getFolders().then(setFolders);
-			} else if (message.type === MessageType.IMAGES_CHANGED) {
+			} else if (message.type === "IMAGES_CHANGED") {
 				console.log("[Toolbar] Images changed in another tab");
 			}
 		};
