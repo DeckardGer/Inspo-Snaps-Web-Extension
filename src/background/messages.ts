@@ -1,18 +1,16 @@
 import browser from "webextension-polyfill";
 import { authClient } from "@/auth/auth-client";
 import * as storage from "@/background/storage";
-import { INSPO_SNAPS_DOMAIN } from "@/lib/config";
+import {
+	INSPO_SNAPS_DOMAIN,
+	SESSION_CACHE_KEY,
+	SESSION_UPDATE_AGE_MS,
+} from "@/lib/config";
 import type { AuthSession, Message, ServiceResponse } from "@/types/messages";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Session Cache
 // ─────────────────────────────────────────────────────────────────────────────
-
-const SESSION_CACHE_KEY = "authSession";
-
-// How long after updatedAt before the session should be refreshed (matches Better Auth updateAge)
-// const SESSION_UPDATE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
-const SESSION_UPDATE_AGE_MS = 15 * 1000; // 1 week in milliseconds
 
 interface CachedSession {
 	session: AuthSession | null;

@@ -3,7 +3,7 @@ import {
 	handleExternalAuthMessage,
 	handleMessage,
 } from "@/background/messages";
-import { ENABLED_SITES_KEY } from "@/lib/constants";
+import { ENABLED_SITES_KEY } from "@/lib/config";
 import type { Message } from "@/types";
 
 const getEnabledSites = async (): Promise<Record<string, boolean>> => {

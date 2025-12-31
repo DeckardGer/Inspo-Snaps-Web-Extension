@@ -1,12 +1,8 @@
 import ReactDOM from "react-dom/client";
 import browser from "webextension-polyfill";
 import { Toolbar } from "@/content/toolbar/Toolbar";
-import { INSPO_SNAPS_DOMAIN } from "@/lib/config";
-import {
-	ENABLED_SITES_KEY,
-	extensionShort,
-	TOOLBAR_CORNER_KEY,
-} from "@/lib/constants";
+import { ENABLED_SITES_KEY, INSPO_SNAPS_DOMAIN } from "@/lib/config";
+import { extensionShort, TOOLBAR_CORNER_KEY } from "@/lib/constants";
 import { normaliseTailwind } from "@/lib/utils";
 import { initializeAuth, useAuthStore } from "@/store/authStore";
 import { useToolbarStore } from "@/store/toolbarStore";
