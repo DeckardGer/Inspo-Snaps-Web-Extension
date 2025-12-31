@@ -1,126 +1,19 @@
-import browser from "webextension-polyfill";
-import { authClient } from "@/auth/auth-client";
-import * as storage from "@/background/storage";
+import type browser from "webextension-polyfill";
+import { handleAuthUpdate } from "@/background/auth";
+import { broadcast } from "@/background/broadcast";
 import {
-	INSPO_SNAPS_DOMAIN,
-	SESSION_CACHE_KEY,
-	SESSION_UPDATE_AGE_MS,
-} from "@/lib/config";
-import type { AuthSession, Message, ServiceResponse } from "@/types/messages";
+	fetchAndCacheSession,
+	getCachedSession,
+	needsRefresh,
+} from "@/background/session";
+import * as storage from "@/background/storage";
+import type { Message, ServiceResponse } from "@/types/messages";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Session Cache
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface CachedSession {
-	session: AuthSession | null;
-	cachedAt: number;
-}
+// Re-export for use in background/index.ts
+export { handleExternalAuthMessage } from "@/background/auth";
 
 /**
- * Check if a session is expired (past expiresAt)
- */
-const isSessionExpired = (session: AuthSession | null): boolean => {
-	if (!session) return true;
-	const expiresAt = new Date(session.session.expiresAt).getTime();
-	return Date.now() >= expiresAt;
-};
-
-/**
- * Check if a session needs refresh (past updatedAt + updateAge)
- */
-const needsRefresh = (session: AuthSession | null): boolean => {
-	if (!session?.session.updatedAt) return false;
-	const updatedAt = new Date(session.session.updatedAt).getTime();
-	const refreshAt = updatedAt + SESSION_UPDATE_AGE_MS;
-	return Date.now() >= refreshAt;
-};
-
-/**
- * Get cached session from storage (returns null if expired)
- */
-const getCachedSession = async (): Promise<CachedSession | null> => {
-	const result = await browser.storage.session.get(SESSION_CACHE_KEY);
-	const cached = result[SESSION_CACHE_KEY] as CachedSession | undefined;
-
-	if (!cached) return null;
-
-	// Return null if session is fully expired
-	if (isSessionExpired(cached.session)) {
-		await clearCachedSession();
-		return null;
-	}
-
-	return cached;
-};
-
-/**
- * Cache session to storage
- */
-const cacheSession = async (session: AuthSession | null): Promise<void> => {
-	const cached: CachedSession = {
-		session,
-		cachedAt: Date.now(),
-	};
-	await browser.storage.session.set({ [SESSION_CACHE_KEY]: cached });
-};
-
-/**
- * Clear cached session from storage
- */
-const clearCachedSession = async (): Promise<void> => {
-	await browser.storage.session.remove(SESSION_CACHE_KEY);
-};
-
-/**
- * Convert Better Auth session response to our AuthSession type
- */
-const toAuthSession = (data: {
-	user: { id: string; name: string; email: string; image?: string | null };
-	session: { id: string; expiresAt: Date; updatedAt: Date };
-}): AuthSession => ({
-	user: {
-		id: data.user.id,
-		name: data.user.name,
-		email: data.user.email,
-		image: data.user.image,
-	},
-	session: {
-		id: data.session.id,
-		expiresAt: data.session.expiresAt.toISOString(),
-		updatedAt: data.session.updatedAt.toISOString(),
-	},
-});
-
-/**
- * Fetch fresh session from server, cache it, and return
- */
-const fetchAndCacheSession = async (): Promise<{
-	session: AuthSession | null;
-	error?: { message: string };
-}> => {
-	const { data, error } = await authClient.getSession();
-
-	if (error) {
-		await clearCachedSession();
-		return {
-			session: null,
-			error: { message: error.message || "Failed to get session" },
-		};
-	}
-
-	if (!data) {
-		await clearCachedSession();
-		return { session: null };
-	}
-
-	const session = toAuthSession(data);
-	await cacheSession(session);
-	return { session };
-};
-
-/**
- * Handle messages from content scripts and route to appropriate storage operations
+ * Handle messages from content scripts and route to appropriate operations.
  */
 export const handleMessage = async (
 	message: Message,
@@ -130,7 +23,10 @@ export const handleMessage = async (
 		const { type } = message;
 
 		switch (type) {
-			// Folder operations
+			// ─────────────────────────────────────────────────────────────────────
+			// Folder Operations
+			// ─────────────────────────────────────────────────────────────────────
+
 			case "GET_FOLDERS": {
 				const folders = await storage.getAllFolders();
 				return { success: true, data: { folders } };
@@ -166,7 +62,10 @@ export const handleMessage = async (
 				return { success: true, data: undefined };
 			}
 
-			// Image operations
+			// ─────────────────────────────────────────────────────────────────────
+			// Image Operations
+			// ─────────────────────────────────────────────────────────────────────
+
 			case "GET_IMAGES": {
 				const { folderId } = message.payload;
 				const images = await storage.getImagesByFolder(folderId);
@@ -207,7 +106,10 @@ export const handleMessage = async (
 				return { success: true, data: { image } };
 			}
 
-			// Auth operations (proxied through background to avoid CORS in content scripts)
+			// ─────────────────────────────────────────────────────────────────────
+			// Auth Operations
+			// ─────────────────────────────────────────────────────────────────────
+
 			case "AUTH_GET_SESSION": {
 				const forceRefresh = message.payload?.forceRefresh ?? false;
 
@@ -241,20 +143,21 @@ export const handleMessage = async (
 				};
 			}
 
-			// Auth bridge update (Firefox postMessage fallback via content script)
 			case "AUTH_BRIDGE_UPDATE": {
 				const { session } = message.payload;
 				await handleAuthUpdate(session);
 				return { success: true, data: undefined };
 			}
 
-			// Broadcast events (no response needed from content scripts)
+			// ─────────────────────────────────────────────────────────────────────
+			// Broadcast Events (handled elsewhere, no-op here)
+			// ─────────────────────────────────────────────────────────────────────
+
 			case "FOLDERS_CHANGED":
 			case "IMAGES_CHANGED":
 			case "SITE_STATE_UPDATED":
 			case "SAVE_IMAGE":
 			case "AUTH_SESSION_UPDATED":
-				// These are handled elsewhere or don't need storage operations
 				return { success: true, data: undefined };
 
 			default: {
@@ -278,95 +181,4 @@ export const handleMessage = async (
 			},
 		};
 	}
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Broadcast
-// ─────────────────────────────────────────────────────────────────────────────
-
-type BroadcastMessage =
-	| { type: "FOLDERS_CHANGED" }
-	| { type: "IMAGES_CHANGED" }
-	| { type: "AUTH_SESSION_UPDATED"; payload: { session: AuthSession | null } };
-
-interface BroadcastOptions {
-	excludeTabId?: number;
-}
-
-/**
- * Broadcast a message to all content scripts.
- */
-const broadcast = async (
-	message: BroadcastMessage,
-	options?: BroadcastOptions,
-) => {
-	const tabs = await browser.tabs.query({});
-
-	for (const tab of tabs) {
-		if (!tab.id) continue;
-		if (options?.excludeTabId && tab.id === options.excludeTabId) continue;
-
-		try {
-			await browser.tabs.sendMessage(tab.id, message);
-		} catch (error) {
-			// Expected: tab has no content script
-			if (
-				error instanceof Error &&
-				error.message.includes("receiving end does not exist")
-			) {
-				continue;
-			}
-			console.warn(`[Background] Failed to broadcast to tab ${tab.id}:`, error);
-		}
-	}
-};
-
-/**
- * Handle auth session update from website.
- * Used by both Firefox (postMessage via content script) and Chrome (externally_connectable).
- */
-const handleAuthUpdate = async (session: AuthSession | null) => {
-	await cacheSession(session);
-	await broadcast({ type: "AUTH_SESSION_UPDATED", payload: { session } });
-};
-
-// Expected message format from website
-interface ExternalAuthMessage {
-	type: "INSPO_SNAPS_AUTH_UPDATE";
-	payload: {
-		session: AuthSession | null;
-	};
-}
-
-const isValidExternalAuthMessage = (
-	data: unknown,
-): data is ExternalAuthMessage => {
-	if (typeof data !== "object" || data === null) return false;
-	const msg = data as Record<string, unknown>;
-	return msg.type === "INSPO_SNAPS_AUTH_UPDATE" && "payload" in msg;
-};
-
-/**
- * Handle external messages from website (via externally_connectable).
- * Chrome only - Firefox doesn't support externally_connectable.
- */
-export const handleExternalAuthMessage = async (
-	message: unknown,
-	sender: browser.Runtime.MessageSender,
-): Promise<{ success: boolean }> => {
-	// Validate origin
-	const origin = sender.url ? new URL(sender.url).origin : null;
-	if (origin !== INSPO_SNAPS_DOMAIN) {
-		console.warn("[Background] Rejected external message from:", origin);
-		return { success: false };
-	}
-
-	// Validate message structure
-	if (!isValidExternalAuthMessage(message)) {
-		console.warn("[Background] Invalid external auth message:", message);
-		return { success: false };
-	}
-
-	await handleAuthUpdate(message.payload.session);
-	return { success: true };
 };
