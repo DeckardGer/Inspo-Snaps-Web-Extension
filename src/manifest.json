@@ -3,6 +3,9 @@
 	"{{firefox}}.manifest_version": 2,
 	"permissions": ["storage", "activeTab", "contextMenus", "cookies"],
 	"host_permissions": ["<all_urls>"],
+	"{{chrome}}.externally_connectable": {
+		"matches": ["http://localhost:3000/*", "https://insposnaps.com/*"]
+	},
 	"icons": {
 		"16": "icon/16.png",
 		"32": "icon/32.png",

@@ -11,6 +11,7 @@ export interface AuthSession {
 	session: {
 		id: string;
 		expiresAt: string;
+		updatedAt: string;
 	};
 }
 
@@ -41,9 +42,12 @@ export type Message =
 			type: "MOVE_IMAGE";
 			payload: { imageId: string; folderId: string | null };
 	  }
-	// Auth operations (proxied through background script to avoid CORS)
+	// Auth operations
 	| { type: "AUTH_GET_SESSION"; payload?: { forceRefresh?: boolean } }
 	| { type: "AUTH_CLEAR_SESSION" }
+	| { type: "AUTH_SESSION_UPDATED"; payload: { session: AuthSession | null } }
+	| { type: "AUTH_REFRESH_SESSION" }
+	| { type: "AUTH_BRIDGE_UPDATE"; payload: { session: AuthSession | null } }
 	// API proxy (all API requests go through background script to avoid CORS)
 	| {
 			type: "API_REQUEST";

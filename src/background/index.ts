@@ -1,5 +1,8 @@
 import browser from "webextension-polyfill";
-import { handleMessage } from "@/background/messages";
+import {
+	handleExternalAuthMessage,
+	handleMessage,
+} from "@/background/messages";
 import { ENABLED_SITES_KEY } from "@/lib/constants";
 import type { Message } from "@/types";
 
@@ -57,5 +60,12 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
 browser.runtime.onMessage.addListener(
 	(message: Message, sender): Promise<unknown> => {
 		return handleMessage(message, sender);
+	},
+);
+
+// Handle external messages from website (via externally_connectable)
+browser.runtime.onMessageExternal.addListener(
+	(message: unknown, sender): Promise<unknown> => {
+		return handleExternalAuthMessage(message, sender);
 	},
 );

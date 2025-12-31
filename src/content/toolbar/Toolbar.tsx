@@ -17,10 +17,10 @@ import { FolderMenu } from "@/content/toolbar/FolderMenu";
 import { ImagePreviewPanel } from "@/content/toolbar/ImagePreviewPanel";
 import { ImageSnapper } from "@/content/toolbar/ImageSnapper";
 import { Notification } from "@/content/toolbar/Notification";
-import { useAuthSession } from "@/hooks/useAuthSession";
 import { useFolderSync } from "@/hooks/useFolderSync";
 import { useImageCapture } from "@/hooks/useImageCapture";
 import { useToolbarDrag } from "@/hooks/useToolbarDrag";
+import { INSPO_SNAPS_DOMAIN } from "@/lib/config";
 import {
 	MAXIMISED_WIDTH,
 	MINIMISED_HEIGHT,
@@ -35,6 +35,7 @@ import { calculatePosition, getToolbarSize } from "@/lib/positioning";
 import { cn } from "@/lib/utils";
 import { getFolderService } from "@/services/folders";
 import { getImageService } from "@/services/images";
+import { useAuthStore } from "@/store/authStore";
 import { useFoldersStore } from "@/store/foldersStore";
 import { useImagesStore } from "@/store/imagesStore";
 import { useToolbarStore } from "@/store/toolbarStore";
@@ -47,8 +48,8 @@ interface ToolbarProps {
 export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	const toolbarRef = useRef<HTMLDivElement>(null);
 
-	// Auth session (fetched via background script to avoid CORS)
-	const { session, isLoading: isAuthLoading } = useAuthSession();
+	// Auth from store (already initialized before toolbar mounts)
+	const { session, isInitialized: isAuthInitialized } = useAuthStore();
 
 	// Stores
 	const {
@@ -226,11 +227,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	}, [isMinimised, corner, setIsMinimised, updatePosition]);
 
 	const openWebsite = useCallback(() => {
-		window.open("https://insposnaps.com/my-folders", "_blank");
+		window.open(`${INSPO_SNAPS_DOMAIN}/my-folders`, "_blank");
 	}, []);
 
 	const openLogin = useCallback(() => {
-		window.open("http://localhost:3000/login", "_blank");
+		window.open(`${INSPO_SNAPS_DOMAIN}/login`, "_blank");
 	}, []);
 
 	// Listen for context menu image saves
@@ -331,7 +332,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 					)}
 
 					<div className="flex flex-1 max-h-9 min-h-9 overflow-hidden">
-						{!isAuthLoading && !session ? (
+						{isAuthInitialized && !session ? (
 							<ButtonGroup className="items-center">
 								<Button
 									variant="ghost"
