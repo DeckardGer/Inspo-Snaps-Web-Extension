@@ -243,94 +243,11 @@ export const handleMessage = async (
 				};
 			}
 
-			case "AUTH_CLEAR_SESSION": {
-				await clearCachedSession();
-				return { success: true, data: undefined };
-			}
-
-			// Manual refresh triggered by user
-			case "AUTH_REFRESH_SESSION": {
-				const result = await fetchAndCacheSession();
-
-				if (result.error) {
-					await broadcast({
-						type: "AUTH_SESSION_UPDATED",
-						payload: { session: null },
-					});
-					return {
-						success: false,
-						error: {
-							message: result.error.message,
-							code: "AUTH_ERROR",
-						},
-					};
-				}
-
-				await broadcast({
-					type: "AUTH_SESSION_UPDATED",
-					payload: { session: result.session },
-				});
-
-				return { success: true, data: { session: result.session } };
-			}
-
 			// Auth bridge update (Firefox postMessage fallback via content script)
 			case "AUTH_BRIDGE_UPDATE": {
 				const { session } = message.payload;
 				await handleAuthUpdate(session);
 				return { success: true, data: undefined };
-			}
-
-			// API proxy (all API requests go through background to avoid CORS)
-			case "API_REQUEST": {
-				const { endpoint, method = "GET", body } = message.payload;
-
-				try {
-					const response = await fetch(`${INSPO_SNAPS_DOMAIN}${endpoint}`, {
-						method,
-						headers: {
-							"Content-Type": "application/json",
-						},
-						credentials: "include", // Include cookies for auth
-						body: body ? JSON.stringify(body) : undefined,
-					});
-
-					// Try to parse JSON, fall back to text
-					let data: unknown;
-					const contentType = response.headers.get("content-type");
-					if (contentType?.includes("application/json")) {
-						data = await response.json();
-					} else {
-						data = await response.text();
-					}
-
-					// Return error for non-2xx responses
-					if (!response.ok) {
-						return {
-							success: false,
-							error: {
-								message:
-									typeof data === "object" && data !== null && "message" in data
-										? String((data as { message: string }).message)
-										: `Request failed with status ${response.status}`,
-								code: `HTTP_${response.status}`,
-							},
-						};
-					}
-
-					return {
-						success: true,
-						data: { data, status: response.status },
-					};
-				} catch (error) {
-					return {
-						success: false,
-						error: {
-							message: error instanceof Error ? error.message : "Network error",
-							code: "NETWORK_ERROR",
-						},
-					};
-				}
 			}
 
 			// Broadcast events (no response needed from content scripts)

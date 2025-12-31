@@ -11,7 +11,6 @@ interface AuthState {
 	setSession: (session: AuthSession | null) => void;
 	setInitialized: () => void;
 	isSessionValid: () => boolean;
-	refreshSession: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -27,23 +26,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 		if (!session) return false;
 		const expiresAt = new Date(session.session.expiresAt).getTime();
 		return Date.now() < expiresAt;
-	},
-
-	refreshSession: async () => {
-		try {
-			const response = await browser.runtime.sendMessage({
-				type: "AUTH_REFRESH_SESSION",
-			});
-
-			if (response.success) {
-				set({ session: response.data.session });
-			} else {
-				set({ session: null });
-			}
-		} catch (error) {
-			console.error("[AuthStore] Failed to refresh session:", error);
-			set({ session: null });
-		}
 	},
 }));
 

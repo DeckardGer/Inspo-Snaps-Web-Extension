@@ -44,19 +44,8 @@ export type Message =
 	  }
 	// Auth operations
 	| { type: "AUTH_GET_SESSION"; payload?: { forceRefresh?: boolean } }
-	| { type: "AUTH_CLEAR_SESSION" }
 	| { type: "AUTH_SESSION_UPDATED"; payload: { session: AuthSession | null } }
-	| { type: "AUTH_REFRESH_SESSION" }
 	| { type: "AUTH_BRIDGE_UPDATE"; payload: { session: AuthSession | null } }
-	// API proxy (all API requests go through background script to avoid CORS)
-	| {
-			type: "API_REQUEST";
-			payload: {
-				endpoint: string;
-				method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-				body?: unknown;
-			};
-	  }
 	// Broadcast events
 	| { type: "FOLDERS_CHANGED" }
 	| { type: "IMAGES_CHANGED" }
@@ -86,8 +75,4 @@ export type DeleteImageResponse = ServiceResponse<void>;
 export type MoveImageResponse = ServiceResponse<{ image: StoredImage }>;
 export type AuthGetSessionResponse = ServiceResponse<{
 	session: AuthSession | null;
-}>;
-export type ApiRequestResponse<T = unknown> = ServiceResponse<{
-	data: T;
-	status: number;
 }>;
