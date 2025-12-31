@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 import { authClient } from "@/auth/auth-client";
 import { SESSION_CACHE_KEY, SESSION_UPDATE_AGE_MS } from "@/lib/config";
-import type { AuthSession } from "@/types/messages";
+import type { AuthSession, SubscriptionTier } from "@/types/messages";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -85,7 +85,13 @@ export const clearCachedSession = async (): Promise<void> => {
  * Convert Better Auth session response to our AuthSession type
  */
 const toAuthSession = (data: {
-	user: { id: string; name: string; email: string; image?: string | null };
+	user: {
+		id: string;
+		name: string;
+		email: string;
+		image?: string | null;
+		tier?: SubscriptionTier;
+	};
 	session: { id: string; expiresAt: Date; updatedAt: Date };
 }): AuthSession => ({
 	user: {
@@ -93,6 +99,7 @@ const toAuthSession = (data: {
 		name: data.user.name,
 		email: data.user.email,
 		image: data.user.image,
+		tier: data.user.tier ?? "free",
 	},
 	session: {
 		id: data.session.id,
@@ -100,6 +107,19 @@ const toAuthSession = (data: {
 		updatedAt: data.session.updatedAt.toISOString(),
 	},
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tier Helper
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Get the current user's subscription tier.
+ * Returns "free" if not logged in or tier not set.
+ */
+export const getCurrentTier = async (): Promise<SubscriptionTier> => {
+	const cached = await getCachedSession();
+	return cached?.session?.user.tier ?? "free";
+};
 
 /**
  * Fetch fresh session from server, cache it, and return

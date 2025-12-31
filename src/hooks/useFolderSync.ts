@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import browser from "webextension-polyfill";
-import { getFolderService } from "@/services/folders";
+import { folderService } from "@/services/folders";
 import { useFoldersStore } from "@/store/foldersStore";
 import type { Message } from "@/types";
 
@@ -9,7 +9,6 @@ export const useFolderSync = () => {
 
 	// Initial fetch
 	useEffect(() => {
-		const folderService = getFolderService();
 		folderService.getFolders().then(setFolders);
 	}, [setFolders]);
 
@@ -18,7 +17,6 @@ export const useFolderSync = () => {
 		const handleMessage = (message: Message) => {
 			if (message.type === "FOLDERS_CHANGED") {
 				console.log("[Toolbar] Folders changed in another tab, refetching...");
-				const folderService = getFolderService();
 				folderService.getFolders().then(setFolders);
 			} else if (message.type === "IMAGES_CHANGED") {
 				console.log("[Toolbar] Images changed in another tab");

@@ -1,12 +1,13 @@
 import type browser from "webextension-polyfill";
 import { handleAuthUpdate } from "@/background/auth";
 import { broadcast } from "@/background/broadcast";
+import { folderService } from "@/background/services/folders";
+import { imageService } from "@/background/services/images";
 import {
 	fetchAndCacheSession,
 	getCachedSession,
 	needsRefresh,
 } from "@/background/session";
-import * as storage from "@/background/storage";
 import type { Message, ServiceResponse } from "@/types/messages";
 
 // Re-export for use in background/index.ts
@@ -28,13 +29,13 @@ export const handleMessage = async (
 			// ─────────────────────────────────────────────────────────────────────
 
 			case "GET_FOLDERS": {
-				const folders = await storage.getAllFolders();
+				const folders = await folderService.getAll();
 				return { success: true, data: { folders } };
 			}
 
 			case "CREATE_FOLDER": {
 				const { name, parentId } = message.payload;
-				const folder = await storage.createFolder(name, parentId);
+				const folder = await folderService.create(name, parentId);
 				await broadcast(
 					{ type: "FOLDERS_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
@@ -44,7 +45,7 @@ export const handleMessage = async (
 
 			case "UPDATE_FOLDER": {
 				const { id, updates } = message.payload;
-				const folder = await storage.updateFolder(id, updates);
+				const folder = await folderService.update(id, updates);
 				await broadcast(
 					{ type: "FOLDERS_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
@@ -54,7 +55,7 @@ export const handleMessage = async (
 
 			case "DELETE_FOLDER": {
 				const { id } = message.payload;
-				await storage.deleteFolder(id);
+				await folderService.delete(id);
 				await broadcast(
 					{ type: "FOLDERS_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
@@ -68,17 +69,13 @@ export const handleMessage = async (
 
 			case "GET_IMAGES": {
 				const { folderId } = message.payload;
-				const images = await storage.getImagesByFolder(folderId);
+				const images = await imageService.getByFolder(folderId);
 				return { success: true, data: { images } };
 			}
 
 			case "SAVE_IMAGES": {
 				const { images } = message.payload;
-				const savedImages = [];
-				for (const image of images) {
-					const saved = await storage.saveImage(image);
-					savedImages.push(saved);
-				}
+				const savedImages = await imageService.saveMany(images);
 				await broadcast(
 					{ type: "IMAGES_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
@@ -88,7 +85,7 @@ export const handleMessage = async (
 
 			case "DELETE_IMAGE": {
 				const { id } = message.payload;
-				await storage.deleteImage(id);
+				await imageService.delete(id);
 				await broadcast(
 					{ type: "IMAGES_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
@@ -98,7 +95,7 @@ export const handleMessage = async (
 
 			case "MOVE_IMAGE": {
 				const { imageId, folderId } = message.payload;
-				const image = await storage.moveImageToFolder(imageId, folderId);
+				const image = await imageService.moveToFolder(imageId, folderId);
 				await broadcast(
 					{ type: "IMAGES_CHANGED" },
 					{ excludeTabId: sender.tab?.id },

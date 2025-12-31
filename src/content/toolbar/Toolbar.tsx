@@ -33,8 +33,8 @@ import {
 } from "@/lib/constants";
 import { calculatePosition, getToolbarSize } from "@/lib/positioning";
 import { cn } from "@/lib/utils";
-import { getFolderService } from "@/services/folders";
-import { getImageService } from "@/services/images";
+import { folderService } from "@/services/folders";
+import { imageService } from "@/services/images";
 import { useAuthStore } from "@/store/authStore";
 import { useFoldersStore } from "@/store/foldersStore";
 import { useImagesStore } from "@/store/imagesStore";
@@ -118,7 +118,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 
 	const handleCreateFolder = useCallback(
 		async (name: string, parentId: string | null): Promise<string> => {
-			const folderService = getFolderService();
 			try {
 				const newFolder = await folderService.createFolder(name, parentId);
 				const updatedFolders = await folderService.getFolders();
@@ -138,7 +137,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 
 	const handleUpdateFolder = useCallback(
 		async (id: string, name: string): Promise<void> => {
-			const folderService = getFolderService();
 			try {
 				await folderService.updateFolder(id, { name });
 				const updatedFolders = await folderService.getFolders();
@@ -157,7 +155,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 
 	const handleDeleteFolder = useCallback(
 		async (id: string): Promise<void> => {
-			const folderService = getFolderService();
 			try {
 				await folderService.deleteFolder(id);
 				const updatedFolders = await folderService.getFolders();
@@ -180,7 +177,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		setIsSavingImages(true);
 
 		try {
-			const imageService = getImageService();
 			await imageService.saveImages(
 				capturedImages.map((img) => ({
 					folderId: currentFolderId,

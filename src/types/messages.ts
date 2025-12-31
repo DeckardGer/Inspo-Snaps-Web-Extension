@@ -1,5 +1,8 @@
 import type { StoredFolder, StoredImage } from "./storage";
 
+// Subscription tiers
+export type SubscriptionTier = "free" | "pro" | "team";
+
 // Auth session type (matches Better Auth response)
 export interface AuthSession {
 	user: {
@@ -7,6 +10,7 @@ export interface AuthSession {
 		name: string;
 		email: string;
 		image?: string | null;
+		tier?: SubscriptionTier;
 	};
 	session: {
 		id: string;
