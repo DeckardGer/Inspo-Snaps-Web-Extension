@@ -110,7 +110,8 @@ const apiFolderService: FolderServiceImpl = {
  */
 const getImpl = async (): Promise<FolderServiceImpl> => {
 	const tier = await getCurrentTier();
-	return tier === "free" ? localFolderService : apiFolderService;
+	return apiFolderService;
+	// return tier === "free" ? localFolderService : apiFolderService;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

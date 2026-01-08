@@ -9,8 +9,10 @@ export const useFolderSync = () => {
 	const { setFolders } = useFoldersStore();
 
 	useEffect(() => {
-		// Initial fetch
-		folderService.getFolders().then(setFolders).catch(console.error);
+		// Initial fetch only if logged in
+		if (useAuthStore.getState().session) {
+			folderService.getFolders().then(setFolders).catch(console.error);
+		}
 
 		// Listen for changes from other tabs and auth updates
 		const handleMessage = (message: Message) => {

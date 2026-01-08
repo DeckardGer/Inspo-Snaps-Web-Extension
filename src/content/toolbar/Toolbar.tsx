@@ -50,6 +50,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 
 	// Auth from store (already initialized before toolbar mounts)
 	const { session, isInitialized: isAuthInitialized } = useAuthStore();
+	const isLoggedOut = isAuthInitialized && !session;
 
 	// Stores
 	const {
@@ -90,10 +91,41 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	);
 	useFolderSync();
 
+	// Folder panel controls
+	const setFolderPanelOpen = useCallback(
+		(open: boolean) => {
+			if (!toolbarRef.current) return;
+
+			const newIsMinimised = !open;
+			if (newIsMinimised === isMinimised) return;
+
+			toolbarRef.current.style.transition = `all ${TOOLBAR_TRANSITION_DURATION}ms ${TOOLBAR_TIMING_FUNCTION}`;
+
+			const { width, height } = getToolbarSize(newIsMinimised);
+			const { x, y } = calculatePosition(corner, width, height);
+
+			updatePosition(x, y);
+			toolbarRef.current.style.transform = `translate(${x}px, ${y}px)`;
+			setIsMinimised(newIsMinimised);
+		},
+		[isMinimised, corner, setIsMinimised, updatePosition],
+	);
+
+	const toggleFolderPanel = useCallback(() => {
+		setFolderPanelOpen(isMinimised);
+	}, [isMinimised, setFolderPanelOpen]);
+
 	// Initialize corner from prop on mount
 	useEffect(() => {
 		setCorner(initialCorner);
 	}, [initialCorner, setCorner]);
+
+	// Minimize toolbar when logged out
+	useEffect(() => {
+		if (isLoggedOut) {
+			setFolderPanelOpen(false);
+		}
+	}, [isLoggedOut, setFolderPanelOpen]);
 
 	// Event handlers
 	const handleThumbnailClick = useCallback(
@@ -206,21 +238,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		setIsPreviewOpen,
 		showNotification,
 	]);
-
-	const toggleFolders = useCallback(() => {
-		if (!toolbarRef.current) return;
-		toolbarRef.current.style.transition = `all ${TOOLBAR_TRANSITION_DURATION}ms ${TOOLBAR_TIMING_FUNCTION}`;
-
-		const newIsMinimised = !isMinimised;
-		const { width, height } = getToolbarSize(newIsMinimised);
-		const { x, y } = calculatePosition(corner, width, height);
-
-		// Update position ref in drag hook
-		updatePosition(x, y);
-
-		toolbarRef.current.style.transform = `translate(${x}px, ${y}px)`;
-		setIsMinimised(newIsMinimised);
-	}, [isMinimised, corner, setIsMinimised, updatePosition]);
 
 	const openWebsite = useCallback(() => {
 		window.open(`${INSPO_SNAPS_DOMAIN}/my-folders`, "_blank");
@@ -356,7 +373,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 										strokeWidth={2}
 									/>
 								</Button>
-								<Button variant="ghost" size="icon" onClick={toggleFolders}>
+								<Button variant="ghost" size="icon" onClick={toggleFolderPanel}>
 									<HugeiconsIcon
 										icon={Folder01Icon}
 										size={18}
