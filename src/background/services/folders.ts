@@ -34,46 +34,64 @@ const localFolderService: FolderServiceImpl = {
 
 const apiFolderService: FolderServiceImpl = {
 	async getAll() {
-		const response = await fetch(`${INSPO_SNAPS_DOMAIN}/api/folders`, {
-			credentials: "include",
-		});
+		const response = await fetch(
+			`${INSPO_SNAPS_DOMAIN}/api/extension/folders`,
+			{
+				credentials: "include",
+			},
+		);
 		if (!response.ok) {
 			throw new Error(`Failed to fetch folders: ${response.status}`);
 		}
-		return response.json();
+
+		const data = await response.json();
+		return data.folders;
 	},
 
 	async create(name, parentId) {
-		const response = await fetch(`${INSPO_SNAPS_DOMAIN}/api/folders`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			credentials: "include",
-			body: JSON.stringify({ name, parentId }),
-		});
+		const response = await fetch(
+			`${INSPO_SNAPS_DOMAIN}/api/extension/folders`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				credentials: "include",
+				body: JSON.stringify({ name, parentId }),
+			},
+		);
 		if (!response.ok) {
 			throw new Error(`Failed to create folder: ${response.status}`);
 		}
-		return response.json();
+
+		const data = await response.json();
+		return data.folder;
 	},
 
 	async update(id, updates) {
-		const response = await fetch(`${INSPO_SNAPS_DOMAIN}/api/folders/${id}`, {
-			method: "PATCH",
-			headers: { "Content-Type": "application/json" },
-			credentials: "include",
-			body: JSON.stringify(updates),
-		});
+		const response = await fetch(
+			`${INSPO_SNAPS_DOMAIN}/api/extension/folders?id=${id}`,
+			{
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				credentials: "include",
+				body: JSON.stringify(updates),
+			},
+		);
 		if (!response.ok) {
 			throw new Error(`Failed to update folder: ${response.status}`);
 		}
-		return response.json();
+
+		const data = await response.json();
+		return data.folder;
 	},
 
 	async delete(id) {
-		const response = await fetch(`${INSPO_SNAPS_DOMAIN}/api/folders/${id}`, {
-			method: "DELETE",
-			credentials: "include",
-		});
+		const response = await fetch(
+			`${INSPO_SNAPS_DOMAIN}/api/extension/folders?id=${id}`,
+			{
+				method: "DELETE",
+				credentials: "include",
+			},
+		);
 		if (!response.ok) {
 			throw new Error(`Failed to delete folder: ${response.status}`);
 		}

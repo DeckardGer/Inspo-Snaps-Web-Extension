@@ -501,7 +501,7 @@ function FoldersView({
 					{folders.map((folder) => (
 						<Command.Item
 							key={folder.id}
-							value={folder.name}
+							value={`${folder.name}-${folder.id}`}
 							onSelect={() => onSelect(folder.id)}
 						>
 							<HugeiconsIcon icon={Folder01Icon} size={18} strokeWidth={2} />
