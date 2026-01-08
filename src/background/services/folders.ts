@@ -66,6 +66,7 @@ const apiFolderService: FolderServiceImpl = {
 		return data.folder;
 	},
 
+	// TODO: Add support for moving folders into other folders
 	async update(id, updates) {
 		const response = await fetch(
 			`${INSPO_SNAPS_DOMAIN}/api/extension/folders?id=${id}`,
