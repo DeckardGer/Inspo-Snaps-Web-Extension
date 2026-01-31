@@ -1,5 +1,8 @@
 import { sendMessage } from "@/lib/messaging";
+import { useOrganizationsStore } from "@/store/organizationsStore";
 import type { StoredImage } from "@/types";
+
+const getOrgId = () => useOrganizationsStore.getState().activeOrganizationId;
 
 /**
  * Image service - thin messaging layer for content scripts.
@@ -9,7 +12,7 @@ export const imageService = {
 	async getImagesByFolder(folderId: string | null): Promise<StoredImage[]> {
 		const { images } = await sendMessage<{ images: StoredImage[] }>({
 			type: "GET_IMAGES",
-			payload: { folderId },
+			payload: { folderId, organizationId: getOrgId() },
 		});
 		return images;
 	},
@@ -32,7 +35,7 @@ export const imageService = {
 			images: StoredImage[];
 		}>({
 			type: "SAVE_IMAGES",
-			payload: { images },
+			payload: { images, organizationId: getOrgId() },
 		});
 		return savedImages;
 	},
@@ -40,7 +43,7 @@ export const imageService = {
 	async deleteImage(id: string): Promise<void> {
 		await sendMessage<void>({
 			type: "DELETE_IMAGE",
-			payload: { id },
+			payload: { id, organizationId: getOrgId() },
 		});
 	},
 
@@ -50,7 +53,7 @@ export const imageService = {
 	): Promise<StoredImage> {
 		const { image } = await sendMessage<{ image: StoredImage }>({
 			type: "MOVE_IMAGE",
-			payload: { imageId, folderId },
+			payload: { imageId, folderId, organizationId: getOrgId() },
 		});
 		return image;
 	},

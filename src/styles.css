@@ -85,28 +85,6 @@
 	--radius-2xl: calc(1 * var(--hem));
 	--radius-3xl: calc(1.5 * var(--hem));
 	--radius-4xl: calc(2 * var(--hem));
-
-	/* Breakpoint */
-	--breakpoint-sm: calc(40 * var(--hem));
-	--breakpoint-md: calc(48 * var(--hem));
-	--breakpoint-lg: calc(64 * var(--hem));
-	--breakpoint-xl: calc(80 * var(--hem));
-	--breakpoint-2xl: calc(96 * var(--hem));
-
-	/* Container */
-	--container-3xs: calc(16 * var(--hem));
-	--container-2xs: calc(18 * var(--hem));
-	--container-xs: calc(20 * var(--hem));
-	--container-sm: calc(24 * var(--hem));
-	--container-md: calc(28 * var(--hem));
-	--container-lg: calc(32 * var(--hem));
-	--container-xl: calc(36 * var(--hem));
-	--container-2xl: calc(42 * var(--hem));
-	--container-3xl: calc(48 * var(--hem));
-	--container-4xl: calc(56 * var(--hem));
-	--container-5xl: calc(64 * var(--hem));
-	--container-6xl: calc(72 * var(--hem));
-	--container-7xl: calc(80 * var(--hem));
 }
 
 :host {

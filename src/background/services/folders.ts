@@ -8,13 +8,18 @@ import type { StoredFolder } from "@/types";
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface FolderServiceImpl {
-	getAll(): Promise<StoredFolder[]>;
-	create(name: string, parentId: string | null): Promise<StoredFolder>;
+	getAll(organizationId?: string | null): Promise<StoredFolder[]>;
+	create(
+		name: string,
+		parentId: string | null,
+		organizationId?: string | null,
+	): Promise<StoredFolder>;
 	update(
 		id: string,
 		updates: Partial<Pick<StoredFolder, "name" | "parentId">>,
+		organizationId?: string | null,
 	): Promise<StoredFolder>;
-	delete(id: string): Promise<void>;
+	delete(id: string, organizationId?: string | null): Promise<void>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,10 +37,21 @@ const localFolderService: FolderServiceImpl = {
 // API Implementation (Backend)
 // ─────────────────────────────────────────────────────────────────────────────
 
+const buildUrl = (
+	path: string,
+	params: Record<string, string | null | undefined>,
+) => {
+	const url = new URL(`${INSPO_SNAPS_DOMAIN}${path}`);
+	for (const [key, value] of Object.entries(params)) {
+		if (value) url.searchParams.set(key, value);
+	}
+	return url.toString();
+};
+
 const apiFolderService: FolderServiceImpl = {
-	async getAll() {
+	async getAll(organizationId) {
 		const response = await fetch(
-			`${INSPO_SNAPS_DOMAIN}/api/extension/folders`,
+			buildUrl("/api/extension/folders", { organizationId }),
 			{
 				credentials: "include",
 			},
@@ -48,9 +64,9 @@ const apiFolderService: FolderServiceImpl = {
 		return data.folders;
 	},
 
-	async create(name, parentId) {
+	async create(name, parentId, organizationId) {
 		const response = await fetch(
-			`${INSPO_SNAPS_DOMAIN}/api/extension/folders`,
+			buildUrl("/api/extension/folders", { organizationId }),
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -67,9 +83,9 @@ const apiFolderService: FolderServiceImpl = {
 	},
 
 	// TODO: Add support for moving folders into other folders
-	async update(id, updates) {
+	async update(id, updates, organizationId) {
 		const response = await fetch(
-			`${INSPO_SNAPS_DOMAIN}/api/extension/folders?id=${id}`,
+			buildUrl("/api/extension/folders", { id, organizationId }),
 			{
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
@@ -85,9 +101,9 @@ const apiFolderService: FolderServiceImpl = {
 		return data.folder;
 	},
 
-	async delete(id) {
+	async delete(id, organizationId) {
 		const response = await fetch(
-			`${INSPO_SNAPS_DOMAIN}/api/extension/folders?id=${id}`,
+			buildUrl("/api/extension/folders", { id, organizationId }),
 			{
 				method: "DELETE",
 				credentials: "include",
@@ -119,8 +135,11 @@ const getImpl = async (): Promise<FolderServiceImpl> => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const folderService: FolderServiceImpl = {
-	getAll: async () => (await getImpl()).getAll(),
-	create: async (name, parentId) => (await getImpl()).create(name, parentId),
-	update: async (id, updates) => (await getImpl()).update(id, updates),
-	delete: async (id) => (await getImpl()).delete(id),
+	getAll: async (organizationId) => (await getImpl()).getAll(organizationId),
+	create: async (name, parentId, organizationId) =>
+		(await getImpl()).create(name, parentId, organizationId),
+	update: async (id, updates, organizationId) =>
+		(await getImpl()).update(id, updates, organizationId),
+	delete: async (id, organizationId) =>
+		(await getImpl()).delete(id, organizationId),
 };

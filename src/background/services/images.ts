@@ -8,14 +8,25 @@ import type { StoredImage } from "@/types";
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface ImageServiceImpl {
-	getByFolder(folderId: string | null): Promise<StoredImage[]>;
-	getAll(): Promise<StoredImage[]>;
-	save(image: Omit<StoredImage, "id" | "createdAt">): Promise<StoredImage>;
+	getByFolder(
+		folderId: string | null,
+		organizationId?: string | null,
+	): Promise<StoredImage[]>;
+	getAll(organizationId?: string | null): Promise<StoredImage[]>;
+	save(
+		image: Omit<StoredImage, "id" | "createdAt">,
+		organizationId?: string | null,
+	): Promise<StoredImage>;
 	saveMany(
 		images: Array<Omit<StoredImage, "id" | "createdAt">>,
+		organizationId?: string | null,
 	): Promise<StoredImage[]>;
-	delete(id: string): Promise<void>;
-	moveToFolder(imageId: string, folderId: string): Promise<StoredImage>;
+	delete(id: string, organizationId?: string | null): Promise<void>;
+	moveToFolder(
+		imageId: string,
+		folderId: string,
+		organizationId?: string | null,
+	): Promise<StoredImage>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -46,6 +57,17 @@ const localImageService: ImageServiceImpl = {
 // API Implementation (Backend)
 // ─────────────────────────────────────────────────────────────────────────────
 
+const buildUrl = (
+	path: string,
+	params: Record<string, string | null | undefined>,
+) => {
+	const url = new URL(`${INSPO_SNAPS_DOMAIN}${path}`);
+	for (const [key, value] of Object.entries(params)) {
+		if (value) url.searchParams.set(key, value);
+	}
+	return url.toString();
+};
+
 const apiImageService: ImageServiceImpl = {
 	async getByFolder() {
 		throw new Error("API route not implemented: getByFolder");
@@ -59,7 +81,7 @@ const apiImageService: ImageServiceImpl = {
 		throw new Error("API route not implemented: save");
 	},
 
-	async saveMany(images) {
+	async saveMany(images, organizationId) {
 		const folderId = images[0]?.folderId;
 		if (!folderId || images.some((img) => !img.folderId)) {
 			throw new Error("Cannot save images without a folder");
@@ -77,9 +99,19 @@ const apiImageService: ImageServiceImpl = {
 			}),
 		);
 
+		console.log(
+			buildUrl("/api/extension/images", {
+				action: "upload-urls",
+				organizationId,
+			}),
+		);
+
 		// Step 1: Get presigned upload URLs
 		const urlsResponse = await fetch(
-			`${INSPO_SNAPS_DOMAIN}/api/extension/images?action=upload-urls`,
+			buildUrl("/api/extension/images", {
+				action: "upload-urls",
+				organizationId,
+			}),
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -112,7 +144,10 @@ const apiImageService: ImageServiceImpl = {
 
 		// Step 3: Save metadata to database
 		const saveResponse = await fetch(
-			`${INSPO_SNAPS_DOMAIN}/api/extension/images?action=save`,
+			buildUrl("/api/extension/images", {
+				action: "save",
+				organizationId,
+			}),
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -168,11 +203,15 @@ const getImpl = async (): Promise<ImageServiceImpl> => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const imageService: ImageServiceImpl = {
-	getByFolder: async (folderId) => (await getImpl()).getByFolder(folderId),
-	getAll: async () => (await getImpl()).getAll(),
-	save: async (image) => (await getImpl()).save(image),
-	saveMany: async (images) => (await getImpl()).saveMany(images),
-	delete: async (id) => (await getImpl()).delete(id),
-	moveToFolder: async (imageId, folderId) =>
-		(await getImpl()).moveToFolder(imageId, folderId),
+	getByFolder: async (folderId, organizationId) =>
+		(await getImpl()).getByFolder(folderId, organizationId),
+	getAll: async (organizationId) => (await getImpl()).getAll(organizationId),
+	save: async (image, organizationId) =>
+		(await getImpl()).save(image, organizationId),
+	saveMany: async (images, organizationId) =>
+		(await getImpl()).saveMany(images, organizationId),
+	delete: async (id, organizationId) =>
+		(await getImpl()).delete(id, organizationId),
+	moveToFolder: async (imageId, folderId, organizationId) =>
+		(await getImpl()).moveToFolder(imageId, folderId, organizationId),
 };

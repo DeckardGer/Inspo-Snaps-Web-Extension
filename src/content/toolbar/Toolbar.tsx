@@ -19,6 +19,7 @@ import { ImageSnapper } from "@/content/toolbar/ImageSnapper";
 import { Notification } from "@/content/toolbar/Notification";
 import { useFolderSync } from "@/hooks/useFolderSync";
 import { useImageCapture } from "@/hooks/useImageCapture";
+import { useOrganizationSync } from "@/hooks/useOrganizationSync";
 import { useToolbarDrag } from "@/hooks/useToolbarDrag";
 import { INSPO_SNAPS_DOMAIN } from "@/lib/config";
 import {
@@ -90,6 +91,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		updatePosition,
 	);
 	useFolderSync();
+	useOrganizationSync();
 
 	// Folder panel controls
 	const setFolderPanelOpen = useCallback(
@@ -183,6 +185,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 			}
 		},
 		[setFolders, showNotification],
+	);
+
+	const handleOrganizationChange = useCallback(
+		async (_organizationId: string | null) => {
+			// Refetch folders for the new context
+			try {
+				const updatedFolders = await folderService.getFolders();
+				setFolders(updatedFolders);
+				setCurrentFolderId(null);
+			} catch (error) {
+				console.error("[Toolbar] Failed to fetch folders:", error);
+				showNotification("Failed to load folders.", "error");
+			}
+		},
+		[setFolders, setCurrentFolderId, showNotification],
 	);
 
 	const handleDeleteFolder = useCallback(
@@ -301,6 +318,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 							onUpdateFolder={handleUpdateFolder}
 							onDeleteFolder={handleDeleteFolder}
 							onFolderSelect={setCurrentFolderId}
+							onOrganizationChange={handleOrganizationChange}
 						/>
 						<Separator />
 

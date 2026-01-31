@@ -2,11 +2,13 @@ import {
 	Add01Icon,
 	ArrowLeft01Icon,
 	ArrowRight01Icon,
+	Building06Icon,
 	Delete01Icon,
 	Edit01Icon,
 	Folder01Icon,
 	Home01Icon,
 	Loading01Icon,
+	UserIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Command } from "cmdk";
@@ -20,9 +22,19 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { flattenFolders } from "@/lib/transforms";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
+import { useOrganizationsStore } from "@/store/organizationsStore";
 import type { FlattenedFolder, Folder } from "@/types";
+import type { Organization } from "@/types/messages";
 
 interface FolderMenuProps {
 	folders: Folder[] | null;
@@ -31,6 +43,7 @@ interface FolderMenuProps {
 	onUpdateFolder?: (id: string, name: string) => Promise<void>;
 	onDeleteFolder?: (id: string) => Promise<void>;
 	onFolderSelect?: (folderId: string | null) => void;
+	onOrganizationChange?: (organizationId: string | null) => void;
 }
 
 export const FolderMenu = memo(function FolderMenu({
@@ -40,6 +53,7 @@ export const FolderMenu = memo(function FolderMenu({
 	onUpdateFolder,
 	onDeleteFolder,
 	onFolderSelect,
+	onOrganizationChange,
 }: FolderMenuProps) {
 	const [search, setSearch] = useState("");
 	const [pages, setPages] = useState<string[]>([]);
@@ -49,6 +63,27 @@ export const FolderMenu = memo(function FolderMenu({
 
 	const inputRef = useRef<HTMLInputElement>(null);
 	const listRef = useRef<HTMLDivElement>(null);
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	const { organizations, activeOrganizationId, setActiveOrganizationId } =
+		useOrganizationsStore();
+	const session = useAuthStore((s) => s.session);
+	const tier = session?.user.tier ?? "free";
+	const showOrgSwitcher =
+		tier === "free" && organizations && organizations.length > 0;
+
+	const activeOrg = useMemo(
+		() => organizations?.find((o) => o.id === activeOrganizationId) ?? null,
+		[organizations, activeOrganizationId],
+	);
+
+	const handleOrgSelect = useCallback(
+		(orgId: string | null) => {
+			setActiveOrganizationId(orgId);
+			onOrganizationChange?.(orgId);
+		},
+		[setActiveOrganizationId, onOrganizationChange],
+	);
 
 	// Helper to focus input after state changes
 	const focusInput = useCallback((options?: { placeCursorAtEnd?: boolean }) => {
@@ -283,6 +318,7 @@ export const FolderMenu = memo(function FolderMenu({
 
 	return (
 		<div
+			ref={containerRef}
 			className={cn(
 				"command-bar flex flex-col flex-1 min-h-0 transition-opacity duration-300",
 				isMinimised ? "opacity-0" : "opacity-100",
@@ -324,6 +360,52 @@ export const FolderMenu = memo(function FolderMenu({
 							strokeWidth={2}
 							className="animate-spin text-muted-foreground mr-3"
 						/>
+					)}
+					{showOrgSwitcher && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<button
+									type="button"
+									className={cn(
+										"flex items-center justify-center size-7 rounded-md transition-colors mr-2 shrink-0",
+										"hover:bg-accent/80 text-muted-foreground hover:text-foreground",
+									)}
+									aria-label="Switch workspace"
+								>
+									{activeOrg ? (
+										<OrgAvatar org={activeOrg} size={18} />
+									) : (
+										<HugeiconsIcon icon={UserIcon} size={16} strokeWidth={2} />
+									)}
+								</button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="min-w-[180px]"
+								container={containerRef.current ?? undefined}
+							>
+								<DropdownMenuItem
+									onSelect={() => handleOrgSelect(null)}
+									className={cn(activeOrganizationId === null && "bg-accent")}
+								>
+									<HugeiconsIcon icon={UserIcon} size={15} strokeWidth={2} />
+									Personal
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								{organizations?.map((org) => (
+									<DropdownMenuItem
+										key={org.id}
+										onSelect={() => handleOrgSelect(org.id)}
+										className={cn(
+											activeOrganizationId === org.id && "bg-accent",
+										)}
+									>
+										<OrgAvatar org={org} size={15} />
+										<span className="truncate">{org.name}</span>
+									</DropdownMenuItem>
+								))}
+							</DropdownMenuContent>
+						</DropdownMenu>
 					)}
 				</div>
 
@@ -554,4 +636,23 @@ function Actions({
 			)}
 		</Command.Group>
 	);
+}
+
+// Organization switcher sub-components
+
+function OrgAvatar({ org, size }: { org: Organization; size: number }) {
+	if (org.logo) {
+		return (
+			<img
+				src={org.logo}
+				alt={org.name}
+				width={size}
+				height={size}
+				className="rounded-sm object-cover"
+				style={{ width: size, height: size }}
+			/>
+		);
+	}
+
+	return <HugeiconsIcon icon={Building06Icon} size={size} strokeWidth={2} />;
 }

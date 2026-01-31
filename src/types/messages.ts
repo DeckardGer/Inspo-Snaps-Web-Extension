@@ -3,6 +3,17 @@ import type { StoredFolder, StoredImage } from "./storage";
 // Subscription tiers
 export type SubscriptionTier = "free" | "pro" | "team";
 
+// Organizations
+export type OrganizationRole = "member" | "viewer" | "admin";
+
+export interface Organization {
+	id: string;
+	name: string;
+	slug: string;
+	logo: string;
+	role: OrganizationRole;
+}
+
 // Auth session type (matches Better Auth response)
 export interface AuthSession {
 	user: {
@@ -22,30 +33,53 @@ export interface AuthSession {
 // Discriminated union for all message types
 export type Message =
 	// Folder operations
-	| { type: "GET_FOLDERS" }
+	| { type: "GET_FOLDERS"; payload?: { organizationId?: string | null } }
 	| {
 			type: "CREATE_FOLDER";
-			payload: { name: string; parentId: string | null };
+			payload: {
+				name: string;
+				parentId: string | null;
+				organizationId?: string | null;
+			};
 	  }
 	| {
 			type: "UPDATE_FOLDER";
 			payload: {
 				id: string;
 				updates: Partial<Pick<StoredFolder, "name" | "parentId">>;
+				organizationId?: string | null;
 			};
 	  }
-	| { type: "DELETE_FOLDER"; payload: { id: string } }
+	| {
+			type: "DELETE_FOLDER";
+			payload: { id: string; organizationId?: string | null };
+	  }
 	// Image operations
-	| { type: "GET_IMAGES"; payload: { folderId: string | null } }
+	| {
+			type: "GET_IMAGES";
+			payload: { folderId: string | null; organizationId?: string | null };
+	  }
 	| {
 			type: "SAVE_IMAGES";
-			payload: { images: Array<Omit<StoredImage, "id" | "createdAt">> };
+			payload: {
+				images: Array<Omit<StoredImage, "id" | "createdAt">>;
+				organizationId?: string | null;
+			};
 	  }
-	| { type: "DELETE_IMAGE"; payload: { id: string } }
+	| {
+			type: "DELETE_IMAGE";
+			payload: { id: string; organizationId?: string | null };
+	  }
 	| {
 			type: "MOVE_IMAGE";
-			payload: { imageId: string; folderId: string };
+			payload: {
+				imageId: string;
+				folderId: string;
+				organizationId?: string | null;
+			};
 	  }
+	// Organization operations
+	| { type: "GET_ORGANIZATIONS" }
 	// Auth operations
 	| { type: "AUTH_GET_SESSION"; payload?: { forceRefresh?: boolean } }
 	| { type: "AUTH_SESSION_UPDATED"; payload: { session: AuthSession | null } }
@@ -77,6 +111,9 @@ export type GetImagesResponse = ServiceResponse<{ images: StoredImage[] }>;
 export type SaveImagesResponse = ServiceResponse<{ images: StoredImage[] }>;
 export type DeleteImageResponse = ServiceResponse<void>;
 export type MoveImageResponse = ServiceResponse<{ image: StoredImage }>;
+export type GetOrganizationsResponse = ServiceResponse<{
+	organizations: Organization[];
+}>;
 export type AuthGetSessionResponse = ServiceResponse<{
 	session: AuthSession | null;
 }>;

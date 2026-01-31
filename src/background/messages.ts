@@ -3,6 +3,7 @@ import { handleAuthUpdate } from "@/background/auth";
 import { broadcast } from "@/background/broadcast";
 import { folderService } from "@/background/services/folders";
 import { imageService } from "@/background/services/images";
+import { organizationService } from "@/background/services/organizations";
 import {
 	fetchAndCacheSession,
 	getCachedSession,
@@ -29,13 +30,18 @@ export const handleMessage = async (
 			// ─────────────────────────────────────────────────────────────────────
 
 			case "GET_FOLDERS": {
-				const folders = await folderService.getAll();
+				const organizationId = message.payload?.organizationId;
+				const folders = await folderService.getAll(organizationId);
 				return { success: true, data: { folders } };
 			}
 
 			case "CREATE_FOLDER": {
-				const { name, parentId } = message.payload;
-				const folder = await folderService.create(name, parentId);
+				const { name, parentId, organizationId } = message.payload;
+				const folder = await folderService.create(
+					name,
+					parentId,
+					organizationId,
+				);
 				await broadcast(
 					{ type: "FOLDERS_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
@@ -44,8 +50,8 @@ export const handleMessage = async (
 			}
 
 			case "UPDATE_FOLDER": {
-				const { id, updates } = message.payload;
-				const folder = await folderService.update(id, updates);
+				const { id, updates, organizationId } = message.payload;
+				const folder = await folderService.update(id, updates, organizationId);
 				await broadcast(
 					{ type: "FOLDERS_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
@@ -54,8 +60,8 @@ export const handleMessage = async (
 			}
 
 			case "DELETE_FOLDER": {
-				const { id } = message.payload;
-				await folderService.delete(id);
+				const { id, organizationId } = message.payload;
+				await folderService.delete(id, organizationId);
 				await broadcast(
 					{ type: "FOLDERS_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
@@ -68,14 +74,14 @@ export const handleMessage = async (
 			// ─────────────────────────────────────────────────────────────────────
 
 			case "GET_IMAGES": {
-				const { folderId } = message.payload;
-				const images = await imageService.getByFolder(folderId);
+				const { folderId, organizationId } = message.payload;
+				const images = await imageService.getByFolder(folderId, organizationId);
 				return { success: true, data: { images } };
 			}
 
 			case "SAVE_IMAGES": {
-				const { images } = message.payload;
-				const savedImages = await imageService.saveMany(images);
+				const { images, organizationId } = message.payload;
+				const savedImages = await imageService.saveMany(images, organizationId);
 				await broadcast(
 					{ type: "IMAGES_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
@@ -84,8 +90,8 @@ export const handleMessage = async (
 			}
 
 			case "DELETE_IMAGE": {
-				const { id } = message.payload;
-				await imageService.delete(id);
+				const { id, organizationId } = message.payload;
+				await imageService.delete(id, organizationId);
 				await broadcast(
 					{ type: "IMAGES_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
@@ -94,13 +100,26 @@ export const handleMessage = async (
 			}
 
 			case "MOVE_IMAGE": {
-				const { imageId, folderId } = message.payload;
-				const image = await imageService.moveToFolder(imageId, folderId);
+				const { imageId, folderId, organizationId } = message.payload;
+				const image = await imageService.moveToFolder(
+					imageId,
+					folderId,
+					organizationId,
+				);
 				await broadcast(
 					{ type: "IMAGES_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
 				);
 				return { success: true, data: { image } };
+			}
+
+			// ─────────────────────────────────────────────────────────────────────
+			// Organization Operations
+			// ─────────────────────────────────────────────────────────────────────
+
+			case "GET_ORGANIZATIONS": {
+				const organizations = await organizationService.getAll();
+				return { success: true, data: { organizations } };
 			}
 
 			// ─────────────────────────────────────────────────────────────────────
