@@ -362,7 +362,7 @@ export const FolderMenu = memo(function FolderMenu({
 						/>
 					)}
 					{showOrgSwitcher && (
-						<DropdownMenu>
+						<DropdownMenu modal={false}>
 							<DropdownMenuTrigger asChild>
 								<button
 									type="button"
