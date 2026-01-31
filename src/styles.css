@@ -126,6 +126,9 @@
 		@apply border-border outline-ring/50;
 	}
 	:host {
+		font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
 		@apply bg-background text-foreground;
 	}
 }

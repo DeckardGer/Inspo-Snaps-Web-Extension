@@ -50,6 +50,17 @@ const showToolbar = async () => {
 	// Attach shadow DOM for style isolation
 	const shadowRoot = rootContainer.attachShadow({ mode: "open" });
 
+	// Inject @font-face for Inter
+	const fontStyle = document.createElement("style");
+	fontStyle.textContent = `@font-face {
+	font-family: "Inter";
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url("${browser.runtime.getURL("fonts/InterVariable.woff2")}") format("woff2");
+}`;
+	shadowRoot.appendChild(fontStyle);
+
 	// Inject Tailwind CSS
 	const styleElement = document.createElement("style");
 	styleElement.textContent = normaliseTailwind(styles);

@@ -1,13 +1,14 @@
 import {
 	Add01Icon,
+	ArrowDown01Icon,
 	ArrowLeft01Icon,
 	ArrowRight01Icon,
-	Building06Icon,
 	Delete01Icon,
 	Edit01Icon,
 	Folder01Icon,
 	Home01Icon,
 	Loading01Icon,
+	UserGroupIcon,
 	UserIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -369,16 +370,20 @@ export const FolderMenu = memo(function FolderMenu({
 								<button
 									type="button"
 									className={cn(
-										"flex items-center justify-center size-7 rounded-md transition-colors mr-2 shrink-0",
-										"hover:bg-accent/80 text-muted-foreground hover:text-foreground",
+										"flex items-center gap-1 rounded-md transition-colors mr-2 shrink-0 px-2 h-7 max-w-[140px] outline-none focus-visible:inset-ring-2 focus-visible:inset-ring-ring/50",
+										"hover:bg-accent/80 data-[state=open]:bg-accent/80 text-muted-foreground hover:text-foreground data-[state=open]:text-foreground text-xs",
 									)}
 									aria-label="Switch workspace"
 								>
-									{activeOrg ? (
-										<OrgAvatar org={activeOrg} size={18} />
-									) : (
-										<HugeiconsIcon icon={UserIcon} size={16} strokeWidth={2} />
-									)}
+									<span className="truncate">
+										{activeOrg ? activeOrg.name : "Personal"}
+									</span>
+									<HugeiconsIcon
+										icon={ArrowDown01Icon}
+										size={12}
+										strokeWidth={2}
+										className="shrink-0"
+									/>
 								</button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent
@@ -390,7 +395,13 @@ export const FolderMenu = memo(function FolderMenu({
 									onSelect={() => handleOrgSelect(null)}
 									className={cn(activeOrganizationId === null && "bg-accent")}
 								>
-									<HugeiconsIcon icon={UserIcon} size={15} strokeWidth={2} />
+									<div className="flex size-5 items-center justify-center rounded-md border">
+										<HugeiconsIcon
+											icon={UserIcon}
+											className="size-3 text-muted-foreground"
+											strokeWidth={2}
+										/>
+									</div>
 									Personal
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
@@ -402,7 +413,7 @@ export const FolderMenu = memo(function FolderMenu({
 											activeOrganizationId === org.id && "bg-accent",
 										)}
 									>
-										<OrgAvatar org={org} size={15} />
+										<OrgAvatar org={org} />
 										<span className="truncate">{org.name}</span>
 									</DropdownMenuItem>
 								))}
@@ -642,19 +653,22 @@ function Actions({
 
 // Organization switcher sub-components
 
-function OrgAvatar({ org, size }: { org: Organization; size: number }) {
-	if (org.logo) {
-		return (
-			<img
-				src={org.logo}
-				alt={org.name}
-				width={size}
-				height={size}
-				className="rounded-sm object-cover"
-				style={{ width: size, height: size }}
-			/>
-		);
-	}
-
-	return <HugeiconsIcon icon={Building06Icon} size={size} strokeWidth={2} />;
+function OrgAvatar({ org }: { org: Organization }) {
+	return (
+		<div className="flex size-5 items-center justify-center rounded-md border">
+			{org.logo ? (
+				<img
+					src={org.logo}
+					alt={org.name}
+					className="size-full rounded-md object-cover"
+				/>
+			) : (
+				<HugeiconsIcon
+					icon={UserGroupIcon}
+					className="size-3 text-muted-foreground"
+					strokeWidth={2}
+				/>
+			)}
+		</div>
+	);
 }

@@ -43,5 +43,12 @@
 			"js": ["src/content/index.tsx"],
 			"run_at": "document_idle"
 		}
-	]
+	],
+	"{{chrome}}.web_accessible_resources": [
+		{
+			"resources": ["fonts/*"],
+			"matches": ["<all_urls>"]
+		}
+	],
+	"{{firefox}}.web_accessible_resources": ["fonts/*"]
 }
