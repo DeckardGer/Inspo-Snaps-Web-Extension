@@ -5,6 +5,7 @@ import { ENABLED_SITES_KEY, INSPO_SNAPS_DOMAIN } from "@/lib/config";
 import { extensionShort, TOOLBAR_CORNER_KEY } from "@/lib/constants";
 import { normaliseTailwind } from "@/lib/utils";
 import { initializeAuth, useAuthStore } from "@/store/authStore";
+import { loadActiveOrganizationId } from "@/store/organizationsStore";
 import { useToolbarStore } from "@/store/toolbarStore";
 import styles from "@/styles.css?inline";
 import type { Corner, Message } from "@/types";
@@ -40,6 +41,7 @@ const showToolbar = async () => {
 	await initializeAuth();
 
 	const initialCorner = await loadToolbarCorner();
+	await loadActiveOrganizationId();
 
 	// Create shadow host
 	rootContainer = document.createElement("div");

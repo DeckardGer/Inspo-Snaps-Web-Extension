@@ -2,6 +2,7 @@
 export const extensionName = "Inspo Snaps";
 export const extensionShort = "inspo-snaps";
 export const TOOLBAR_CORNER_KEY = "toolbarCorner";
+export const ACTIVE_ORG_KEY = "activeOrganizationId";
 export const WEBSITE_URL = "insposnaps.com";
 
 // UI constants
