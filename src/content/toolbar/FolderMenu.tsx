@@ -80,6 +80,8 @@ export const FolderMenu = memo(function FolderMenu({
 	const handleOrgSelect = useCallback(
 		(orgId: string | null) => {
 			setActiveOrganizationId(orgId);
+			setPages([]);
+			setSearch("");
 			onOrganizationChange?.(orgId);
 		},
 		[setActiveOrganizationId, onOrganizationChange],
