@@ -44,77 +44,99 @@ const localImageService: ImageServiceImpl = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const apiImageService: ImageServiceImpl = {
-	async getByFolder(folderId) {
-		const params = folderId ? `?folderId=${folderId}` : "";
-		const response = await fetch(`${INSPO_SNAPS_DOMAIN}/api/images${params}`, {
-			credentials: "include",
-		});
-		if (!response.ok) {
-			throw new Error(`Failed to fetch images: ${response.status}`);
-		}
-		return response.json();
+	async getByFolder() {
+		throw new Error("API route not implemented: getByFolder");
 	},
 
 	async getAll() {
-		const response = await fetch(`${INSPO_SNAPS_DOMAIN}/api/images`, {
-			credentials: "include",
-		});
-		if (!response.ok) {
-			throw new Error(`Failed to fetch images: ${response.status}`);
-		}
-		return response.json();
+		throw new Error("API route not implemented: getAll");
 	},
 
-	async save(image) {
-		const response = await fetch(`${INSPO_SNAPS_DOMAIN}/api/images`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			credentials: "include",
-			body: JSON.stringify(image),
-		});
-		if (!response.ok) {
-			throw new Error(`Failed to save image: ${response.status}`);
-		}
-		return response.json();
+	async save() {
+		throw new Error("API route not implemented: save");
 	},
 
 	async saveMany(images) {
-		const response = await fetch(`${INSPO_SNAPS_DOMAIN}/api/images/batch`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			credentials: "include",
-			body: JSON.stringify({ images }),
-		});
-		if (!response.ok) {
-			throw new Error(`Failed to save images: ${response.status}`);
-		}
-		return response.json();
-	},
+		// Convert data URL src strings to Blobs for S3 upload
+		const parsed = await Promise.all(
+			images.map(async (img) => {
+				const response = await fetch(img.src);
+				const blob = await response.blob();
+				const contentType = blob.type || "image/png";
+				const extension = contentType.split("/")[1] ?? "png";
+				const filename = `image-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
+				return { ...img, blob, contentType, filename };
+			}),
+		);
 
-	async delete(id) {
-		const response = await fetch(`${INSPO_SNAPS_DOMAIN}/api/images/${id}`, {
-			method: "DELETE",
-			credentials: "include",
-		});
-		if (!response.ok) {
-			throw new Error(`Failed to delete image: ${response.status}`);
-		}
-	},
-
-	async moveToFolder(imageId, folderId) {
-		const response = await fetch(
-			`${INSPO_SNAPS_DOMAIN}/api/images/${imageId}/move`,
+		// Step 1: Get presigned upload URLs
+		const urlsResponse = await fetch(
+			`${INSPO_SNAPS_DOMAIN}/api/extension/images?action=upload-urls`,
 			{
-				method: "PATCH",
+				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
-				body: JSON.stringify({ folderId }),
+				body: JSON.stringify({
+					images: parsed.map((img) => ({
+						filename: img.filename,
+						contentType: img.contentType,
+					})),
+				}),
 			},
 		);
-		if (!response.ok) {
-			throw new Error(`Failed to move image: ${response.status}`);
+
+		if (!urlsResponse.ok) {
+			throw new Error(`Failed to get upload URLs: ${urlsResponse.status}`);
 		}
-		return response.json();
+
+		const { images: uploadData } = await urlsResponse.json();
+
+		// Step 2: Upload each image to S3
+		await Promise.all(
+			uploadData.map((data: { uploadUrl: string }, i: number) =>
+				fetch(data.uploadUrl, {
+					method: "PUT",
+					body: parsed[i].blob,
+					headers: { "Content-Type": parsed[i].contentType },
+				}),
+			),
+		);
+
+		// Step 3: Save metadata to database
+		const saveResponse = await fetch(
+			`${INSPO_SNAPS_DOMAIN}/api/extension/images?action=save`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				credentials: "include",
+				body: JSON.stringify({
+					folderId: images[0]?.folderId ?? null,
+					images: uploadData.map(
+						(data: { filename: string; storageKey: string }, i: number) => ({
+							filename: data.filename,
+							storageKey: data.storageKey,
+							mimeType: parsed[i].contentType,
+							sizeBytes: parsed[i].blob.size,
+							originUrl: parsed[i].metadata?.originalUrl,
+						}),
+					),
+				}),
+			},
+		);
+
+		if (!saveResponse.ok) {
+			throw new Error(`Failed to save images: ${saveResponse.status}`);
+		}
+
+		return saveResponse.json();
+	},
+
+	async delete() {
+		throw new Error("API route not implemented: delete");
+	},
+
+	async moveToFolder() {
+		throw new Error("API route not implemented: moveToFolder");
 	},
 };
 
