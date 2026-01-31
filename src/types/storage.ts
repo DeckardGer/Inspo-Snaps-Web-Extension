@@ -9,7 +9,7 @@ export interface StoredFolder {
 
 export interface StoredImage {
 	id: string;
-	folderId: string | null;
+	folderId: string;
 	src: string;
 	createdAt: number;
 	metadata?: {

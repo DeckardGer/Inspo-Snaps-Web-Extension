@@ -206,6 +206,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	const handleSaveImages = useCallback(async () => {
 		if (capturedImages.length === 0 || isSavingImages) return;
 
+		if (!currentFolderId) {
+			showNotification("Please select a folder before saving.", "error");
+			return;
+		}
+
 		setIsSavingImages(true);
 
 		try {

@@ -46,7 +46,7 @@ export const imageService = {
 
 	async moveImageToFolder(
 		imageId: string,
-		folderId: string | null,
+		folderId: string,
 	): Promise<StoredImage> {
 		const { image } = await sendMessage<{ image: StoredImage }>({
 			type: "MOVE_IMAGE",

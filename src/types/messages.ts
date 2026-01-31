@@ -44,7 +44,7 @@ export type Message =
 	| { type: "DELETE_IMAGE"; payload: { id: string } }
 	| {
 			type: "MOVE_IMAGE";
-			payload: { imageId: string; folderId: string | null };
+			payload: { imageId: string; folderId: string };
 	  }
 	// Auth operations
 	| { type: "AUTH_GET_SESSION"; payload?: { forceRefresh?: boolean } }

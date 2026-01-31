@@ -15,7 +15,7 @@ interface ImageServiceImpl {
 		images: Array<Omit<StoredImage, "id" | "createdAt">>,
 	): Promise<StoredImage[]>;
 	delete(id: string): Promise<void>;
-	moveToFolder(imageId: string, folderId: string | null): Promise<StoredImage>;
+	moveToFolder(imageId: string, folderId: string): Promise<StoredImage>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -27,6 +27,9 @@ const localImageService: ImageServiceImpl = {
 	getAll: () => storage.getAllImages(),
 	save: (image) => storage.saveImage(image),
 	async saveMany(images) {
+		if (images.some((img) => !img.folderId)) {
+			throw new Error("Cannot save images without a folder");
+		}
 		const savedImages: StoredImage[] = [];
 		for (const image of images) {
 			const saved = await storage.saveImage(image);
@@ -57,6 +60,11 @@ const apiImageService: ImageServiceImpl = {
 	},
 
 	async saveMany(images) {
+		const folderId = images[0]?.folderId;
+		if (!folderId || images.some((img) => !img.folderId)) {
+			throw new Error("Cannot save images without a folder");
+		}
+
 		// Convert data URL src strings to Blobs for S3 upload
 		const parsed = await Promise.all(
 			images.map(async (img) => {
@@ -110,7 +118,7 @@ const apiImageService: ImageServiceImpl = {
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
 				body: JSON.stringify({
-					folderId: images[0]?.folderId ?? null,
+					folderId,
 					images: uploadData.map(
 						(data: { filename: string; storageKey: string }, i: number) => ({
 							filename: data.filename,
@@ -151,7 +159,8 @@ const apiImageService: ImageServiceImpl = {
  */
 const getImpl = async (): Promise<ImageServiceImpl> => {
 	const tier = await getCurrentTier();
-	return tier === "free" ? localImageService : apiImageService;
+	return apiImageService;
+	// return tier === "free" ? localImageService : apiImageService;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -296,7 +296,7 @@ export const deleteImage = async (id: string): Promise<void> => {
 
 export const moveImageToFolder = async (
 	imageId: string,
-	folderId: string | null,
+	folderId: string,
 ): Promise<StoredImage> => {
 	const db = await openDB();
 
