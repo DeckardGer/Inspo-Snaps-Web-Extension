@@ -27,5 +27,6 @@ dist-ssr
 .webextrc
 .webextrc.*
 
-# TODO: Remove me
+ROADMAP.md
+
 /test-src
