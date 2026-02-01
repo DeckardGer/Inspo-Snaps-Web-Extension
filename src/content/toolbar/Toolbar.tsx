@@ -11,6 +11,12 @@ import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Separator } from "@/components/ui/separator";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CapturedThumbnails } from "@/content/toolbar/CapturedThumbnails";
 import { FlyingImage } from "@/content/toolbar/FlyingImage";
 import { FolderMenu } from "@/content/toolbar/FolderMenu";
@@ -48,6 +54,7 @@ interface ToolbarProps {
 
 export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	const toolbarRef = useRef<HTMLDivElement>(null);
+	const portalContainerRef = useRef<HTMLDivElement>(null);
 
 	// Auth from store (already initialized before toolbar mounts)
 	const { session, isInitialized: isAuthInitialized } = useAuthStore();
@@ -282,7 +289,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	}, [handleImageCapture]);
 
 	return (
-		<>
+		<TooltipProvider>
 			<ImageSnapper
 				isInspecting={isInspecting}
 				onImageCapture={handleImageCapture}
@@ -309,7 +316,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 					transform: `translate(-${MINIMISED_WIDTH}px, -${MINIMISED_HEIGHT}px)`,
 				}}
 			>
-				<div className="flex flex-1 flex-col bg-background rounded-md overflow-hidden relative">
+				<div
+					ref={portalContainerRef}
+					className="flex flex-1 flex-col bg-background rounded-md overflow-hidden relative"
+				>
 					<div className="relative flex flex-1 flex-col overflow-hidden">
 						<FolderMenu
 							folders={folders}
@@ -381,40 +391,71 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 							</ButtonGroup>
 						) : (
 							<ButtonGroup>
-								<Button
-									variant="ghost"
-									size="icon"
-									className={cn(
-										!isMinimised && "rounded-tl-none",
-										isInspecting && "text-primary hover:text-primary",
-									)}
-									onClick={toggleIsInspecting}
-								>
-									<HugeiconsIcon
-										icon={Camera01Icon}
-										size={18}
-										strokeWidth={2}
-									/>
-								</Button>
-								<Button variant="ghost" size="icon" onClick={toggleFolderPanel}>
-									<HugeiconsIcon
-										icon={Folder01Icon}
-										size={18}
-										strokeWidth={2}
-									/>
-								</Button>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="rounded-r-none"
-									onClick={openWebsite}
-								>
-									<HugeiconsIcon
-										icon={LinkSquare02Icon}
-										size={18}
-										strokeWidth={2}
-									/>
-								</Button>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											className={cn(
+												!isMinimised && "rounded-tl-none",
+												isInspecting && "text-primary hover:text-primary",
+											)}
+											onClick={toggleIsInspecting}
+										>
+											<HugeiconsIcon
+												icon={Camera01Icon}
+												size={18}
+												strokeWidth={2}
+											/>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent
+										container={portalContainerRef.current ?? undefined}
+									>
+										Capture Images
+									</TooltipContent>
+								</Tooltip>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={toggleFolderPanel}
+										>
+											<HugeiconsIcon
+												icon={Folder01Icon}
+												size={18}
+												strokeWidth={2}
+											/>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent
+										container={portalContainerRef.current ?? undefined}
+									>
+										Show Folders
+									</TooltipContent>
+								</Tooltip>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											className="rounded-r-none"
+											onClick={openWebsite}
+										>
+											<HugeiconsIcon
+												icon={LinkSquare02Icon}
+												size={18}
+												strokeWidth={2}
+											/>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent
+										container={portalContainerRef.current ?? undefined}
+									>
+										View Collections
+									</TooltipContent>
+								</Tooltip>
 							</ButtonGroup>
 						)}
 
@@ -437,6 +478,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 					</div>
 				</div>
 			</div>
-		</>
+		</TooltipProvider>
 	);
 };
