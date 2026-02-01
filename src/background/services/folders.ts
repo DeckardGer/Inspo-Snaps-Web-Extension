@@ -82,7 +82,6 @@ const apiFolderService: FolderServiceImpl = {
 		return data.folder;
 	},
 
-	// TODO: Add support for moving folders into other folders
 	async update(id, updates, organizationId) {
 		const response = await fetch(
 			buildUrl("/api/extension/folders", { id, organizationId }),
