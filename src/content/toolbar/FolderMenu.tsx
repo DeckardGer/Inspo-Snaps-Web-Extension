@@ -7,6 +7,7 @@ import {
 	Edit01Icon,
 	Folder01Icon,
 	Home01Icon,
+	InformationCircleIcon,
 	Loading01Icon,
 	UserGroupIcon,
 	UserIcon,
@@ -30,6 +31,12 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { flattenFolders } from "@/lib/transforms";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
@@ -408,6 +415,7 @@ export const FolderMenu = memo(function FolderMenu({
 								{organizations?.map((org) => (
 									<DropdownMenuItem
 										key={org.id}
+										disabled={org.role === "viewer"}
 										onSelect={() => handleOrgSelect(org.id)}
 										className={cn(
 											activeOrganizationId === org.id && "bg-accent",
@@ -415,6 +423,30 @@ export const FolderMenu = memo(function FolderMenu({
 									>
 										<OrgAvatar org={org} />
 										<span className="truncate">{org.name}</span>
+										{org.role === "viewer" && (
+											<TooltipProvider delayDuration={200}>
+												<Tooltip>
+													<TooltipTrigger
+														asChild
+														onClick={(e) => e.preventDefault()}
+													>
+														<span className="ml-auto flex items-center pointer-events-auto">
+															<HugeiconsIcon
+																icon={InformationCircleIcon}
+																className="size-3.5 text-muted-foreground"
+																strokeWidth={2}
+															/>
+														</span>
+													</TooltipTrigger>
+													<TooltipContent
+														container={containerRef.current ?? undefined}
+													>
+														Viewers can't access team folders from the
+														extension.
+													</TooltipContent>
+												</Tooltip>
+											</TooltipProvider>
+										)}
 									</DropdownMenuItem>
 								))}
 							</DropdownMenuContent>
