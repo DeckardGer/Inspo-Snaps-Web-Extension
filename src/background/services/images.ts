@@ -1,5 +1,3 @@
-import { getCurrentTier } from "@/background/session";
-import * as storage from "@/background/storage";
 import { INSPO_SNAPS_DOMAIN } from "@/lib/config";
 import type { StoredImage } from "@/types";
 
@@ -30,30 +28,6 @@ interface ImageServiceImpl {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Local Implementation (IndexedDB)
-// ─────────────────────────────────────────────────────────────────────────────
-
-const localImageService: ImageServiceImpl = {
-	getByFolder: (folderId) => storage.getImagesByFolder(folderId),
-	getAll: () => storage.getAllImages(),
-	save: (image) => storage.saveImage(image),
-	async saveMany(images) {
-		if (images.some((img) => !img.folderId)) {
-			throw new Error("Cannot save images without a folder");
-		}
-		const savedImages: StoredImage[] = [];
-		for (const image of images) {
-			const saved = await storage.saveImage(image);
-			savedImages.push(saved);
-		}
-		return savedImages;
-	},
-	delete: (id) => storage.deleteImage(id),
-	moveToFolder: (imageId, folderId) =>
-		storage.moveImageToFolder(imageId, folderId),
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
 // API Implementation (Backend)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -68,7 +42,11 @@ const buildUrl = (
 	return url.toString();
 };
 
-const apiImageService: ImageServiceImpl = {
+// ─────────────────────────────────────────────────────────────────────────────
+// Exported Service (always uses backend API)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const imageService: ImageServiceImpl = {
 	async getByFolder() {
 		throw new Error("API route not implemented: getByFolder");
 	},
@@ -96,13 +74,6 @@ const apiImageService: ImageServiceImpl = {
 				const extension = contentType.split("/")[1] ?? "png";
 				const filename = `image-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
 				return { ...img, blob, contentType, filename };
-			}),
-		);
-
-		console.log(
-			buildUrl("/api/extension/images", {
-				action: "upload-urls",
-				organizationId,
 			}),
 		);
 
@@ -181,37 +152,4 @@ const apiImageService: ImageServiceImpl = {
 	async moveToFolder() {
 		throw new Error("API route not implemented: moveToFolder");
 	},
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Implementation Selector
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Get the appropriate service implementation based on user's subscription tier.
- * - "free" → local IndexedDB storage
- * - "pro" or "team" → backend API
- */
-const getImpl = async (): Promise<ImageServiceImpl> => {
-	const tier = await getCurrentTier();
-	return apiImageService;
-	// return tier === "free" ? localImageService : apiImageService;
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Exported Service (delegates to appropriate implementation)
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const imageService: ImageServiceImpl = {
-	getByFolder: async (folderId, organizationId) =>
-		(await getImpl()).getByFolder(folderId, organizationId),
-	getAll: async (organizationId) => (await getImpl()).getAll(organizationId),
-	save: async (image, organizationId) =>
-		(await getImpl()).save(image, organizationId),
-	saveMany: async (images, organizationId) =>
-		(await getImpl()).saveMany(images, organizationId),
-	delete: async (id, organizationId) =>
-		(await getImpl()).delete(id, organizationId),
-	moveToFolder: async (imageId, folderId, organizationId) =>
-		(await getImpl()).moveToFolder(imageId, folderId, organizationId),
 };

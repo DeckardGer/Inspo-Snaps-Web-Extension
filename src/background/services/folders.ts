@@ -1,5 +1,3 @@
-import { getCurrentTier } from "@/background/session";
-import * as storage from "@/background/storage";
 import { INSPO_SNAPS_DOMAIN } from "@/lib/config";
 import type { StoredFolder } from "@/types";
 
@@ -23,17 +21,6 @@ interface FolderServiceImpl {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Local Implementation (IndexedDB)
-// ─────────────────────────────────────────────────────────────────────────────
-
-const localFolderService: FolderServiceImpl = {
-	getAll: () => storage.getAllFolders(),
-	create: (name, parentId) => storage.createFolder(name, parentId),
-	update: (id, updates) => storage.updateFolder(id, updates),
-	delete: (id) => storage.deleteFolder(id),
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
 // API Implementation (Backend)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -48,7 +35,11 @@ const buildUrl = (
 	return url.toString();
 };
 
-const apiFolderService: FolderServiceImpl = {
+// ─────────────────────────────────────────────────────────────────────────────
+// Exported Service (always uses backend API)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const folderService: FolderServiceImpl = {
 	async getAll(organizationId) {
 		const response = await fetch(
 			buildUrl("/api/extension/folders", { organizationId }),
@@ -112,33 +103,4 @@ const apiFolderService: FolderServiceImpl = {
 			throw new Error(`Failed to delete folder: ${response.status}`);
 		}
 	},
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Implementation Selector
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Get the appropriate service implementation based on user's subscription tier.
- * - "free" → local IndexedDB storage
- * - "pro" or "team" → backend API
- */
-const getImpl = async (): Promise<FolderServiceImpl> => {
-	const tier = await getCurrentTier();
-	return apiFolderService;
-	// return tier === "free" ? localFolderService : apiFolderService;
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Exported Service (delegates to appropriate implementation)
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const folderService: FolderServiceImpl = {
-	getAll: async (organizationId) => (await getImpl()).getAll(organizationId),
-	create: async (name, parentId, organizationId) =>
-		(await getImpl()).create(name, parentId, organizationId),
-	update: async (id, updates, organizationId) =>
-		(await getImpl()).update(id, updates, organizationId),
-	delete: async (id, organizationId) =>
-		(await getImpl()).delete(id, organizationId),
 };

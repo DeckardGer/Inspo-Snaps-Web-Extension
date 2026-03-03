@@ -1,3 +1,9 @@
+/**
+ * @deprecated Local IndexedDB storage is currently disabled.
+ * All data is stored via the backend API instead.
+ * This file is kept for potential future use.
+ */
+
 import { WEBSITE_URL } from "@/lib/constants";
 import { generateId } from "@/lib/id";
 import type { StoredFolder, StoredImage } from "@/types";
