@@ -76,9 +76,9 @@ export const FolderMenu = memo(function FolderMenu({
 	const { organizations, activeOrganizationId, setActiveOrganizationId } =
 		useOrganizationsStore();
 	const session = useAuthStore((s) => s.session);
-	const tier = session?.user.tier ?? "free";
+	const plan = session?.session.plan ?? "trial";
 	const showOrgSwitcher =
-		tier === "free" && organizations && organizations.length > 0;
+		plan === "team" && organizations && organizations.length > 0;
 
 	const activeOrg = useMemo(
 		() => organizations?.find((o) => o.id === activeOrganizationId) ?? null,

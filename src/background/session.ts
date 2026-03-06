@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 import { authClient } from "@/auth/auth-client";
 import { SESSION_CACHE_KEY, SESSION_UPDATE_AGE_MS } from "@/lib/config";
-import type { AuthSession, SubscriptionTier } from "@/types/messages";
+import type { AuthSession, PlanKey } from "@/types/messages";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -90,35 +90,41 @@ const toAuthSession = (data: {
 		name: string;
 		email: string;
 		image?: string | null;
-		tier?: SubscriptionTier;
 	};
-	session: { id: string; expiresAt: Date; updatedAt: Date };
+	session: {
+		id: string;
+		expiresAt: Date;
+		updatedAt: Date;
+		plan: PlanKey;
+		canWrite: boolean;
+	};
 }): AuthSession => ({
 	user: {
 		id: data.user.id,
 		name: data.user.name,
 		email: data.user.email,
 		image: data.user.image,
-		tier: data.user.tier ?? "free",
 	},
 	session: {
 		id: data.session.id,
 		expiresAt: data.session.expiresAt.toISOString(),
 		updatedAt: data.session.updatedAt.toISOString(),
+		plan: data.session.plan,
+		canWrite: data.session.canWrite,
 	},
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Tier Helper
+// Plan Helper
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Get the current user's subscription tier.
- * Returns "free" if not logged in or tier not set.
+ * Get the current user's plan.
+ * Returns "trial" if not logged in.
  */
-export const getCurrentTier = async (): Promise<SubscriptionTier> => {
+export const getCurrentPlan = async (): Promise<PlanKey> => {
 	const cached = await getCachedSession();
-	return cached?.session?.user.tier ?? "free";
+	return cached?.session?.session.plan ?? "trial";
 };
 
 /**
@@ -143,7 +149,11 @@ export const fetchAndCacheSession = async (): Promise<{
 		return { session: null };
 	}
 
-	const session = toAuthSession(data);
+	// Better Auth's client types don't include customSession fields,
+	// but the server returns them at runtime
+	const session = toAuthSession(
+		data as unknown as Parameters<typeof toAuthSession>[0],
+	);
 	await cacheSession(session);
 	return { session };
 };

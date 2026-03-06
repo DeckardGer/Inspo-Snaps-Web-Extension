@@ -1,7 +1,7 @@
 import type { StoredFolder, StoredImage } from "./storage";
 
-// Subscription tiers
-export type SubscriptionTier = "free" | "pro" | "team";
+// Plan types (matches website's Better Auth customSession)
+export type PlanKey = "trial" | "pro" | "team";
 
 // Organizations
 export type OrganizationRole = "member" | "viewer" | "admin";
@@ -14,19 +14,20 @@ export interface Organization {
 	role: OrganizationRole;
 }
 
-// Auth session type (matches Better Auth response)
+// Auth session type (matches Better Auth response with customSession plugin)
 export interface AuthSession {
 	user: {
 		id: string;
 		name: string;
 		email: string;
 		image?: string | null;
-		tier?: SubscriptionTier;
 	};
 	session: {
 		id: string;
 		expiresAt: string;
 		updatedAt: string;
+		plan: PlanKey;
+		canWrite: boolean;
 	};
 }
 

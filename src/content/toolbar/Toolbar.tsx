@@ -1,5 +1,6 @@
 import {
 	Camera01Icon,
+	CrownIcon,
 	DragDropVerticalIcon,
 	Folder01Icon,
 	LinkSquare02Icon,
@@ -59,6 +60,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	// Auth from store (already initialized before toolbar mounts)
 	const { session, isInitialized: isAuthInitialized } = useAuthStore();
 	const isLoggedOut = isAuthInitialized && !session;
+	const hasSubscription = !!session && session.session.canWrite;
 
 	// Stores
 	const {
@@ -129,12 +131,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		setCorner(initialCorner);
 	}, [initialCorner, setCorner]);
 
-	// Minimize toolbar when logged out
+	// Minimize toolbar when logged out or no subscription
 	useEffect(() => {
-		if (isLoggedOut) {
+		if (isLoggedOut || !hasSubscription) {
 			setFolderPanelOpen(false);
 		}
-	}, [isLoggedOut, setFolderPanelOpen]);
+	}, [isLoggedOut, hasSubscription, setFolderPanelOpen]);
 
 	// Event handlers
 	const handleThumbnailClick = useCallback(
@@ -276,6 +278,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		window.open(`${INSPO_SNAPS_DOMAIN}/login`, "_blank");
 	}, []);
 
+	const openPricing = useCallback(() => {
+		window.open(`${INSPO_SNAPS_DOMAIN}/pricing`, "_blank");
+	}, []);
+
 	// Listen for context menu image saves
 	useEffect(() => {
 		const handleSaveImage = (e: Event) => {
@@ -378,7 +384,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 					)}
 
 					<div className="flex flex-1 max-h-9 min-h-9 overflow-hidden">
-						{isAuthInitialized && !session ? (
+						{isLoggedOut ? (
 							<ButtonGroup className="items-center">
 								<Button
 									variant="ghost"
@@ -387,6 +393,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 								>
 									<HugeiconsIcon icon={Login01Icon} size={18} strokeWidth={2} />
 									Login
+								</Button>
+							</ButtonGroup>
+						) : !hasSubscription ? (
+							<ButtonGroup className="items-center">
+								<Button
+									variant="ghost"
+									className="rounded-r-none"
+									onClick={openPricing}
+								>
+									<HugeiconsIcon icon={CrownIcon} size={18} strokeWidth={2} />
+									Subscribe
 								</Button>
 							</ButtonGroup>
 						) : (
