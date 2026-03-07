@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Inspo Snaps is a browser extension for capturing and organizing images from web pages. Built with React + TypeScript, it supports both Chrome (Manifest v3) and Firefox (Manifest v2) using local IndexedDB storage.
+Inspo Snaps is a browser extension for capturing and organizing images from web pages. Built with React + TypeScript, it supports both Chrome (Manifest v3) and Firefox (Manifest v2) with a backend API for storage.
 
 ## Commands
 
@@ -41,7 +41,7 @@ src/
 ├── components/ui/  # shadcn/ui components (Radix + Tailwind)
 ├── hooks/          # Custom React hooks (useImageCapture, useToolbarDrag, etc.)
 ├── lib/            # Utilities and constants
-├── services/       # Service layer with factory pattern (local/API switching)
+├── services/       # Service layer (messaging to background services)
 ├── store/          # Zustand state management
 └── types/          # TypeScript type definitions
 ```
@@ -50,11 +50,9 @@ src/
 
 **Messaging System**: Background and content scripts communicate via typed messages. Message types are defined in `src/types/messages.ts` with exhaustive type checking using TypeScript's `never` type in `src/background/messages.ts`.
 
-**Storage**: IndexedDB with `folders` and `images` object stores, managed in `src/background/storage.ts`. Always close database connections to prevent blocking.
-
 **Shadow DOM**: Content script mounts React into a shadow DOM (`src/content/index.tsx`) for style isolation from host pages.
 
-**Service Factory**: `src/services/folders.ts` and `src/services/images.ts` use a factory pattern controlled by `APP_MODE` in `src/lib/config.ts` to switch between local and API implementations.
+**Backend Services**: `src/background/services/` contains API service implementations for folders, images, and organizations. Content scripts communicate with these via the messaging layer in `src/services/`.
 
 **State Management**: Three Zustand stores in `src/store/`:
 - `toolbarStore` - UI state (minimized, corner position, inspector mode)

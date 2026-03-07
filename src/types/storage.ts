@@ -1,4 +1,4 @@
-// Storage layer types (flat structure for IndexedDB)
+// Data model types for API contracts
 export interface StoredFolder {
 	id: string;
 	name: string;

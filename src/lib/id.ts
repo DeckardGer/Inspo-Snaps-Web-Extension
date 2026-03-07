@@ -1,6 +1,5 @@
 /**
  * Generate unique ID with optional prefix
- * Used across storage.ts and components
  */
 export const generateId = (prefix?: string): string => {
 	const timestamp = Date.now();
