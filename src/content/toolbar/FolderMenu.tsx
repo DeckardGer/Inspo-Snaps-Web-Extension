@@ -39,7 +39,6 @@ import {
 } from "@/components/ui/tooltip";
 import { flattenFolders } from "@/lib/transforms";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/authStore";
 import { useOrganizationsStore } from "@/store/organizationsStore";
 import type { FlattenedFolder, Folder } from "@/types";
 import type { Organization } from "@/types/messages";
@@ -73,12 +72,10 @@ export const FolderMenu = memo(function FolderMenu({
 	const listRef = useRef<HTMLDivElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 
-	const { organizations, activeOrganizationId, setActiveOrganizationId } =
+	const { organizations, activeOrganizationId, setActiveOrganizationId, plan } =
 		useOrganizationsStore();
-	const session = useAuthStore((s) => s.session);
-	const plan = session?.session.plan ?? "trial";
-	const showOrgSwitcher =
-		plan === "team" && organizations && organizations.length > 0;
+	const showOrgSwitcher = organizations && organizations.length > 0;
+	const hasTeamWriteAccess = plan === "team" || plan === "trial";
 
 	const activeOrg = useMemo(
 		() => organizations?.find((o) => o.id === activeOrganizationId) ?? null,
@@ -412,43 +409,52 @@ export const FolderMenu = memo(function FolderMenu({
 									Personal
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
-								{organizations?.map((org) => (
-									<DropdownMenuItem
-										key={org.id}
-										disabled={org.role === "viewer"}
-										onSelect={() => handleOrgSelect(org.id)}
-										className={cn(
-											activeOrganizationId === org.id && "bg-accent",
-										)}
-									>
-										<OrgAvatar org={org} />
-										<span className="truncate">{org.name}</span>
-										{org.role === "viewer" && (
-											<TooltipProvider delayDuration={200}>
-												<Tooltip>
-													<TooltipTrigger
-														asChild
-														onClick={(e) => e.preventDefault()}
-													>
-														<span className="ml-auto flex items-center pointer-events-auto">
-															<HugeiconsIcon
-																icon={InformationCircleIcon}
-																className="size-3.5 text-muted-foreground"
-																strokeWidth={2}
-															/>
-														</span>
-													</TooltipTrigger>
-													<TooltipContent
-														container={containerRef.current ?? undefined}
-													>
-														Viewers can't access team folders from the
-														extension.
-													</TooltipContent>
-												</Tooltip>
-											</TooltipProvider>
-										)}
-									</DropdownMenuItem>
-								))}
+								{organizations?.map((org) => {
+									const isViewer = org.role === "viewer";
+									const isDisabled = isViewer || !hasTeamWriteAccess;
+									const tooltipMessage = isViewer
+										? "Viewers can't access team folders from the extension."
+										: !hasTeamWriteAccess
+											? "A Team subscription is required to access team folders."
+											: null;
+
+									return (
+										<DropdownMenuItem
+											key={org.id}
+											disabled={isDisabled}
+											onSelect={() => handleOrgSelect(org.id)}
+											className={cn(
+												activeOrganizationId === org.id && "bg-accent",
+											)}
+										>
+											<OrgAvatar org={org} />
+											<span className="truncate">{org.name}</span>
+											{tooltipMessage && (
+												<TooltipProvider delayDuration={200}>
+													<Tooltip>
+														<TooltipTrigger
+															asChild
+															onClick={(e) => e.preventDefault()}
+														>
+															<span className="ml-auto flex items-center pointer-events-auto">
+																<HugeiconsIcon
+																	icon={InformationCircleIcon}
+																	className="size-3.5 text-muted-foreground"
+																	strokeWidth={2}
+																/>
+															</span>
+														</TooltipTrigger>
+														<TooltipContent
+															container={containerRef.current ?? undefined}
+														>
+															{tooltipMessage}
+														</TooltipContent>
+													</Tooltip>
+												</TooltipProvider>
+											)}
+										</DropdownMenuItem>
+									);
+								})}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					)}

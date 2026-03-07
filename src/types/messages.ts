@@ -1,7 +1,7 @@
 import type { StoredFolder, StoredImage } from "./storage";
 
 // Plan types (matches website's Better Auth customSession)
-export type PlanKey = "trial" | "pro" | "team";
+export type PlanKey = "none" | "trial" | "pro" | "team";
 
 // Organizations
 export type OrganizationRole = "member" | "viewer" | "admin";
@@ -114,6 +114,8 @@ export type DeleteImageResponse = ServiceResponse<void>;
 export type MoveImageResponse = ServiceResponse<{ image: StoredImage }>;
 export type GetOrganizationsResponse = ServiceResponse<{
 	organizations: Organization[];
+	plan: PlanKey;
+	canWrite: boolean;
 }>;
 export type AuthGetSessionResponse = ServiceResponse<{
 	session: AuthSession | null;

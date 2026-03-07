@@ -1,13 +1,16 @@
 import { sendMessage } from "@/lib/messaging";
-import type { Organization } from "@/types/messages";
+import type { Organization, PlanKey } from "@/types/messages";
+
+export interface OrganizationsData {
+	organizations: Organization[];
+	plan: PlanKey;
+	canWrite: boolean;
+}
 
 export const organizationService = {
-	async getOrganizations(): Promise<Organization[]> {
-		const { organizations } = await sendMessage<{
-			organizations: Organization[];
-		}>({
+	async getOrganizations(): Promise<OrganizationsData> {
+		return sendMessage<OrganizationsData>({
 			type: "GET_ORGANIZATIONS",
 		});
-		return organizations;
 	},
 };

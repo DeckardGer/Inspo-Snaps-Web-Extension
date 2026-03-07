@@ -118,8 +118,8 @@ export const handleMessage = async (
 			// ─────────────────────────────────────────────────────────────────────
 
 			case "GET_ORGANIZATIONS": {
-				const organizations = await organizationService.getAll();
-				return { success: true, data: { organizations } };
+				const result = await organizationService.getAll();
+				return { success: true, data: result };
 			}
 
 			// ─────────────────────────────────────────────────────────────────────

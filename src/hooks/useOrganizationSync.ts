@@ -6,14 +6,14 @@ import { useOrganizationsStore } from "@/store/organizationsStore";
 import type { Message } from "@/types";
 
 export const useOrganizationSync = () => {
-	const { setOrganizations } = useOrganizationsStore();
+	const { setOrganizations, setOrganizationsData } = useOrganizationsStore();
 
 	useEffect(() => {
 		// Initial fetch only if logged in
 		if (useAuthStore.getState().session) {
 			organizationService
 				.getOrganizations()
-				.then(setOrganizations)
+				.then(setOrganizationsData)
 				.catch(console.error);
 		}
 
@@ -23,7 +23,7 @@ export const useOrganizationSync = () => {
 				if (useAuthStore.getState().session) {
 					organizationService
 						.getOrganizations()
-						.then(setOrganizations)
+						.then(setOrganizationsData)
 						.catch(console.error);
 				} else {
 					setOrganizations(null);
@@ -36,5 +36,5 @@ export const useOrganizationSync = () => {
 		return () => {
 			browser.runtime.onMessage.removeListener(handleMessage);
 		};
-	}, [setOrganizations]);
+	}, [setOrganizations, setOrganizationsData]);
 };
