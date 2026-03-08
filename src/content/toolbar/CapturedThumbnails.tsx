@@ -1,8 +1,4 @@
-import {
-	Cancel01Icon,
-	FloppyDiskIcon,
-	Loading01Icon,
-} from "@hugeicons/core-free-icons";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -14,8 +10,6 @@ interface CapturedThumbnailsProps {
 	images: CapturedImage[];
 	onClick: () => void;
 	onRemove: () => void;
-	onSave?: () => void;
-	isSaving?: boolean;
 }
 
 export const CapturedThumbnails = React.memo<CapturedThumbnailsProps>(
@@ -23,8 +17,6 @@ export const CapturedThumbnails = React.memo<CapturedThumbnailsProps>(
 		images,
 		onClick,
 		onRemove,
-		onSave,
-		isSaving = false,
 	}: CapturedThumbnailsProps) {
 		const [isHovered, setIsHovered] = useState(false);
 
@@ -37,11 +29,6 @@ export const CapturedThumbnails = React.memo<CapturedThumbnailsProps>(
 		const handleRemoveClick = (e: React.MouseEvent) => {
 			e.stopPropagation();
 			onRemove();
-		};
-
-		const handleSaveClick = (e: React.MouseEvent) => {
-			e.stopPropagation();
-			onSave?.();
 		};
 
 		return (
@@ -83,25 +70,6 @@ export const CapturedThumbnails = React.memo<CapturedThumbnailsProps>(
 							{count}
 						</Badge>
 					)
-				)}
-				{onSave && (
-					<Button
-						size="icon"
-						className="absolute top-[-6px] right-[-6px] h-8 w-8 rounded-full shadow-md"
-						onClick={handleSaveClick}
-						disabled={isSaving}
-					>
-						{isSaving ? (
-							<HugeiconsIcon
-								icon={Loading01Icon}
-								size={16}
-								strokeWidth={2}
-								className="animate-spin"
-							/>
-						) : (
-							<HugeiconsIcon icon={FloppyDiskIcon} size={16} strokeWidth={2} />
-						)}
-					</Button>
 				)}
 			</div>
 		);

@@ -3,8 +3,10 @@ import {
 	ArrowDown01Icon,
 	ArrowLeft01Icon,
 	ArrowRight01Icon,
+	CheckmarkCircle01Icon,
 	Delete01Icon,
 	Edit01Icon,
+	FloppyDiskIcon,
 	Folder01Icon,
 	Home01Icon,
 	InformationCircleIcon,
@@ -51,6 +53,9 @@ interface FolderMenuProps {
 	onDeleteFolder?: (id: string) => Promise<void>;
 	onFolderSelect?: (folderId: string | null) => void;
 	onOrganizationChange?: (organizationId: string | null) => void;
+	onSaveImages?: (clearAfterSave: boolean) => void;
+	capturedImageCount?: number;
+	isSavingImages?: boolean;
 }
 
 export const FolderMenu = memo(function FolderMenu({
@@ -61,6 +66,9 @@ export const FolderMenu = memo(function FolderMenu({
 	onDeleteFolder,
 	onFolderSelect,
 	onOrganizationChange,
+	onSaveImages,
+	capturedImageCount = 0,
+	isSavingImages = false,
 }: FolderMenuProps) {
 	const [search, setSearch] = useState("");
 	const [pages, setPages] = useState<string[]>([]);
@@ -537,6 +545,9 @@ export const FolderMenu = memo(function FolderMenu({
 									onPrepareRenameFolder={handlePrepareRenameFolder}
 									onDeleteFolder={handleDeleteFolder}
 									currentFolderId={currentFolderId}
+									onSaveImages={onSaveImages}
+									capturedImageCount={capturedImageCount}
+									isSavingImages={isSavingImages}
 								/>
 							) : (
 								<FoldersView
@@ -546,6 +557,9 @@ export const FolderMenu = memo(function FolderMenu({
 									onPrepareRenameFolder={handlePrepareRenameFolder}
 									onDeleteFolder={handleDeleteFolder}
 									currentFolderId={currentFolderId}
+									onSaveImages={onSaveImages}
+									capturedImageCount={capturedImageCount}
+									isSavingImages={isSavingImages}
 								/>
 							)}
 						</>
@@ -564,6 +578,9 @@ interface FolderListProps {
 	onPrepareRenameFolder: () => void;
 	onDeleteFolder: () => void;
 	currentFolderId: string | undefined;
+	onSaveImages?: (clearAfterSave: boolean) => void;
+	capturedImageCount: number;
+	isSavingImages: boolean;
 }
 
 function SearchView({
@@ -573,6 +590,9 @@ function SearchView({
 	onPrepareRenameFolder,
 	onDeleteFolder,
 	currentFolderId,
+	onSaveImages,
+	capturedImageCount,
+	isSavingImages,
 }: FolderListProps & { flattenedFolders: FlattenedFolder[] }) {
 	return (
 		<>
@@ -614,6 +634,9 @@ function SearchView({
 				onPrepareRenameFolder={onPrepareRenameFolder}
 				onDeleteFolder={onDeleteFolder}
 				currentFolderId={currentFolderId}
+				onSaveImages={onSaveImages}
+				capturedImageCount={capturedImageCount}
+				isSavingImages={isSavingImages}
 			/>
 		</>
 	);
@@ -626,6 +649,9 @@ function FoldersView({
 	onPrepareRenameFolder,
 	onDeleteFolder,
 	currentFolderId,
+	onSaveImages,
+	capturedImageCount,
+	isSavingImages,
 }: FolderListProps & { folders: Folder[] }) {
 	return (
 		<>
@@ -651,6 +677,9 @@ function FoldersView({
 				onPrepareRenameFolder={onPrepareRenameFolder}
 				onDeleteFolder={onDeleteFolder}
 				currentFolderId={currentFolderId}
+				onSaveImages={onSaveImages}
+				capturedImageCount={capturedImageCount}
+				isSavingImages={isSavingImages}
 			/>
 		</>
 	);
@@ -661,14 +690,44 @@ function Actions({
 	onPrepareRenameFolder,
 	onDeleteFolder,
 	currentFolderId,
+	onSaveImages,
+	capturedImageCount,
+	isSavingImages,
 }: {
 	onPrepareAddFolder: () => void;
 	onPrepareRenameFolder: () => void;
 	onDeleteFolder: () => void;
 	currentFolderId: string | undefined;
+	onSaveImages?: (clearAfterSave: boolean) => void;
+	capturedImageCount: number;
+	isSavingImages: boolean;
 }) {
 	return (
 		<Command.Group heading="Actions">
+			{onSaveImages && capturedImageCount > 0 && currentFolderId && (
+				<>
+					<Command.Item
+						onSelect={() => onSaveImages(false)}
+						disabled={isSavingImages}
+					>
+						<HugeiconsIcon icon={FloppyDiskIcon} size={18} strokeWidth={2} />
+						<span cmdk-item-text="">Save to Folder</span>
+						<div cmdk-shortcuts="">{capturedImageCount}</div>
+					</Command.Item>
+					<Command.Item
+						onSelect={() => onSaveImages(true)}
+						disabled={isSavingImages}
+					>
+						<HugeiconsIcon
+							icon={CheckmarkCircle01Icon}
+							size={18}
+							strokeWidth={2}
+						/>
+						<span cmdk-item-text="">Save & Clear</span>
+						<div cmdk-shortcuts="">{capturedImageCount}</div>
+					</Command.Item>
+				</>
+			)}
 			<Command.Item onSelect={onPrepareAddFolder}>
 				<HugeiconsIcon icon={Add01Icon} size={18} strokeWidth={2} />
 				<span cmdk-item-text="">New Folder...</span>

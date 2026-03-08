@@ -229,46 +229,53 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		[setFolders, showNotification],
 	);
 
-	const handleSaveImages = useCallback(async () => {
-		if (capturedImages.length === 0 || isSavingImages) return;
+	const handleSaveImages = useCallback(
+		async (clearAfterSave: boolean) => {
+			if (capturedImages.length === 0 || isSavingImages) return;
 
-		if (!currentFolderId) {
-			showNotification("Please select a folder before saving.", "error");
-			return;
-		}
+			if (!currentFolderId) {
+				showNotification("Please select a folder before saving.", "error");
+				return;
+			}
 
-		setIsSavingImages(true);
+			setIsSavingImages(true);
 
-		try {
-			await imageService.saveImages(
-				capturedImages.map((img) => ({
-					folderId: currentFolderId,
-					src: img.src,
-				})),
-			);
+			try {
+				await imageService.saveImages(
+					capturedImages.map((img) => ({
+						folderId: currentFolderId,
+						src: img.src,
+					})),
+				);
 
-			clearCapturedImages();
-			setIsPreviewOpen(false);
-		} catch (error) {
-			console.error("[Toolbar] Failed to save images:", error);
-			const message =
-				error instanceof Error
-					? error.message
-					: "Failed to save images. Please try again.";
-			showNotification(message, "error");
-			// Error stays in UI state for user to retry
-		} finally {
-			setIsSavingImages(false);
-		}
-	}, [
-		capturedImages,
-		currentFolderId,
-		isSavingImages,
-		setIsSavingImages,
-		clearCapturedImages,
-		setIsPreviewOpen,
-		showNotification,
-	]);
+				const label = capturedImages.length === 1 ? "Image" : "Images";
+				showNotification(`${label} saved!`, "success");
+
+				if (clearAfterSave) {
+					clearCapturedImages();
+					setIsPreviewOpen(false);
+				}
+			} catch (error) {
+				console.error("[Toolbar] Failed to save images:", error);
+				const message =
+					error instanceof Error
+						? error.message
+						: "Failed to save images. Please try again.";
+				showNotification(message, "error");
+			} finally {
+				setIsSavingImages(false);
+			}
+		},
+		[
+			capturedImages,
+			currentFolderId,
+			isSavingImages,
+			setIsSavingImages,
+			clearCapturedImages,
+			setIsPreviewOpen,
+			showNotification,
+		],
+	);
 
 	const openWebsite = useCallback(() => {
 		window.open(`${INSPO_SNAPS_DOMAIN}/my-folders`, "_blank");
@@ -335,6 +342,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 							onDeleteFolder={handleDeleteFolder}
 							onFolderSelect={setCurrentFolderId}
 							onOrganizationChange={handleOrganizationChange}
+							onSaveImages={handleSaveImages}
+							capturedImageCount={capturedImages.length}
+							isSavingImages={isSavingImages}
 						/>
 						<Separator />
 
@@ -377,8 +387,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 								images={capturedImages}
 								onClick={handleThumbnailClick}
 								onRemove={removeLatestImage}
-								onSave={handleSaveImages}
-								isSaving={isSavingImages}
 							/>
 						</div>
 					)}
