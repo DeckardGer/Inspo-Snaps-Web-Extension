@@ -46,13 +46,14 @@ export const FlyingImage = React.memo<FlyingImageProps>(function FlyingImage({
 			src={captureData.src}
 			alt=""
 			onTransitionEnd={handleTransitionEnd}
-			className="fixed object-cover z-9999999999 pointer-events-none rounded-lg shadow-md"
+			className="fixed object-cover pointer-events-none rounded-lg shadow-md"
 			style={{
 				left: isAnimating ? targetPosition.x : captureData.rect.left,
 				top: isAnimating ? targetPosition.y : captureData.rect.top,
 				width: isAnimating ? THUMBNAIL_SIZE : captureData.rect.width,
 				height: isAnimating ? THUMBNAIL_SIZE : captureData.rect.height,
 				transition: `all ${CAPTURE_ANIMATION_DURATION}ms ${TOOLBAR_TIMING_FUNCTION}`,
+				zIndex: 1000000001,
 			}}
 		/>
 	);

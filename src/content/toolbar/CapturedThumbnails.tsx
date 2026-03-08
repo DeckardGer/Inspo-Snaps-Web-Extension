@@ -1,43 +1,32 @@
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import React, { useState } from "react";
+import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { THUMBNAIL_SIZE } from "@/lib/constants";
 import type { CapturedImage } from "@/types";
 
-interface CapturedThumbnailsProps {
+interface CapturedThumbnailProps {
 	images: CapturedImage[];
 	onClick: () => void;
-	onRemove: () => void;
+	onMouseEnter: () => void;
+	onMouseLeave: () => void;
 }
 
-export const CapturedThumbnails = React.memo<CapturedThumbnailsProps>(
-	function CapturedThumbnails({
+export const CapturedThumbnail = React.memo<CapturedThumbnailProps>(
+	function CapturedThumbnail({
 		images,
 		onClick,
-		onRemove,
-	}: CapturedThumbnailsProps) {
-		const [isHovered, setIsHovered] = useState(false);
-
+		onMouseEnter,
+		onMouseLeave,
+	}: CapturedThumbnailProps) {
 		if (images.length === 0) return null;
 
-		// Show the most recent image
 		const latestImage = images[images.length - 1];
-		const count = images.length;
-
-		const handleRemoveClick = (e: React.MouseEvent) => {
-			e.stopPropagation();
-			onRemove();
-		};
 
 		return (
 			// biome-ignore lint/a11y/noStaticElementInteractions: Need for hover state
-			<div
-				className="relative flex items-center gap-2"
-				onMouseEnter={() => setIsHovered(true)}
-				onMouseLeave={() => setIsHovered(false)}
-			>
+			<div onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
 				<Button
 					className="relative block cursor-pointer p-0 border-0 bg-transparent rounded-lg shadow-md"
 					style={{
@@ -56,10 +45,49 @@ export const CapturedThumbnails = React.memo<CapturedThumbnailsProps>(
 						}}
 					/>
 				</Button>
+			</div>
+		);
+	},
+);
+
+interface CapturedThumbnailOverlayProps {
+	count: number;
+	isHovered: boolean;
+	onRemove: () => void;
+	onMouseEnter: () => void;
+	onMouseLeave: () => void;
+}
+
+export const CapturedThumbnailOverlay =
+	React.memo<CapturedThumbnailOverlayProps>(function CapturedThumbnailOverlay({
+		count,
+		isHovered,
+		onRemove,
+		onMouseEnter,
+		onMouseLeave,
+	}: CapturedThumbnailOverlayProps) {
+		const handleRemoveClick = (e: React.MouseEvent) => {
+			e.stopPropagation();
+			onRemove();
+		};
+
+		if (!isHovered && count <= 1) return null;
+
+		return (
+			// biome-ignore lint/a11y/noStaticElementInteractions: Need for hover state
+			<div
+				className="pointer-events-none"
+				style={{
+					width: THUMBNAIL_SIZE,
+					height: THUMBNAIL_SIZE,
+				}}
+				onMouseEnter={onMouseEnter}
+				onMouseLeave={onMouseLeave}
+			>
 				{isHovered ? (
 					<Button
 						size="icon"
-						className="absolute top-[-6px] left-[-6px] bg-primary hover:bg-primary text-white h-5 w-5 rounded-full"
+						className="absolute top-[-6px] left-[-6px] bg-primary hover:bg-primary text-white h-5 w-5 rounded-full pointer-events-auto"
 						onClick={handleRemoveClick}
 					>
 						<HugeiconsIcon icon={Cancel01Icon} size={8} strokeWidth={2} />
@@ -73,5 +101,4 @@ export const CapturedThumbnails = React.memo<CapturedThumbnailsProps>(
 				)}
 			</div>
 		);
-	},
-);
+	});

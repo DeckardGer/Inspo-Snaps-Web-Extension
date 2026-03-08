@@ -8,7 +8,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type React from "react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Separator } from "@/components/ui/separator";
@@ -18,7 +18,10 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CapturedThumbnails } from "@/content/toolbar/CapturedThumbnails";
+import {
+	CapturedThumbnail,
+	CapturedThumbnailOverlay,
+} from "@/content/toolbar/CapturedThumbnails";
 import { FlyingImage } from "@/content/toolbar/FlyingImage";
 import { FolderMenu } from "@/content/toolbar/FolderMenu";
 import { ImagePreviewPanel } from "@/content/toolbar/ImagePreviewPanel";
@@ -34,12 +37,14 @@ import {
 	MINIMISED_HEIGHT,
 	MINIMISED_WIDTH,
 	SAFE_ZONE,
-	THUMBNAIL_SIZE,
-	THUMBNAIL_TOOLBAR_PADDING,
 	TOOLBAR_TIMING_FUNCTION,
 	TOOLBAR_TRANSITION_DURATION,
 } from "@/lib/constants";
-import { calculatePosition, getToolbarSize } from "@/lib/positioning";
+import {
+	calculatePosition,
+	getThumbnailTargetPosition,
+	getToolbarSize,
+} from "@/lib/positioning";
 import { cn } from "@/lib/utils";
 import { folderService } from "@/services/folders";
 import { imageService } from "@/services/images";
@@ -56,6 +61,7 @@ interface ToolbarProps {
 export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 	const toolbarRef = useRef<HTMLDivElement>(null);
 	const portalContainerRef = useRef<HTMLDivElement>(null);
+	const [isThumbnailHovered, setIsThumbnailHovered] = useState(false);
 
 	// Auth from store (already initialized before toolbar mounts)
 	const { session, isInitialized: isAuthInitialized } = useAuthStore();
@@ -318,6 +324,42 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 				/>
 			))}
 
+			{!isMinimised && capturedImages.length > 0 && (
+				<>
+					<div
+						className="fixed"
+						style={{
+							left: getThumbnailTargetPosition(corner).x,
+							top: getThumbnailTargetPosition(corner).y,
+							zIndex: 1000000000,
+						}}
+					>
+						<CapturedThumbnail
+							images={capturedImages}
+							onClick={handleThumbnailClick}
+							onMouseEnter={() => setIsThumbnailHovered(true)}
+							onMouseLeave={() => setIsThumbnailHovered(false)}
+						/>
+					</div>
+					<div
+						className="fixed pointer-events-none"
+						style={{
+							left: getThumbnailTargetPosition(corner).x,
+							top: getThumbnailTargetPosition(corner).y,
+							zIndex: 1000000002,
+						}}
+					>
+						<CapturedThumbnailOverlay
+							count={capturedImages.length}
+							isHovered={isThumbnailHovered}
+							onRemove={removeLatestImage}
+							onMouseEnter={() => setIsThumbnailHovered(true)}
+							onMouseLeave={() => setIsThumbnailHovered(false)}
+						/>
+					</div>
+				</>
+			)}
+
 			<div
 				ref={toolbarRef}
 				className="flex fixed inset-0 select-none touch-none opacity-0 shadow-2xl animate-fade-in z-999999999 backdrop-blur-sm rounded-[7px] border border-border-outside"
@@ -369,26 +411,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 							onClose={handlePreviewClose}
 							onRemoveImage={handleRemoveImage}
 						/>
-					)}
-
-					{!isMinimised && capturedImages.length > 0 && (
-						<div
-							className="absolute"
-							style={{
-								left:
-									MAXIMISED_WIDTH -
-									THUMBNAIL_SIZE -
-									THUMBNAIL_TOOLBAR_PADDING -
-									2,
-								bottom: MINIMISED_HEIGHT + THUMBNAIL_TOOLBAR_PADDING - 1,
-							}}
-						>
-							<CapturedThumbnails
-								images={capturedImages}
-								onClick={handleThumbnailClick}
-								onRemove={removeLatestImage}
-							/>
-						</div>
 					)}
 
 					<div className="flex flex-1 max-h-9 min-h-9 overflow-hidden">
