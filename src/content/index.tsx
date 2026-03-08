@@ -1,3 +1,4 @@
+import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import ReactDOM from "react-dom/client";
 import browser from "webextension-polyfill";
 import { Toolbar } from "@/content/toolbar/Toolbar";
@@ -75,7 +76,11 @@ const showToolbar = async () => {
 
 	// Mount React
 	root = ReactDOM.createRoot(mountPoint);
-	root.render(<Toolbar initialCorner={initialCorner} />);
+	root.render(
+		<HotkeysProvider>
+			<Toolbar initialCorner={initialCorner} />
+		</HotkeysProvider>,
+	);
 };
 
 const hideToolbar = () => {

@@ -7,6 +7,7 @@ import {
 	Login01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { formatForDisplay } from "@tanstack/react-hotkeys";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import { useFolderSync } from "@/hooks/useFolderSync";
 import { useImageCapture } from "@/hooks/useImageCapture";
 import { useOrganizationSync } from "@/hooks/useOrganizationSync";
 import { useToolbarDrag } from "@/hooks/useToolbarDrag";
+import { useToolbarHotkeys } from "@/hooks/useToolbarHotkeys";
 import { INSPO_SNAPS_DOMAIN } from "@/lib/config";
 import {
 	MAXIMISED_WIDTH,
@@ -283,6 +285,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 		],
 	);
 
+	// Hotkeys
+	useToolbarHotkeys({ toggleFolderPanel, onSaveImages: handleSaveImages });
+
 	const openWebsite = useCallback(() => {
 		window.open(`${INSPO_SNAPS_DOMAIN}/my-folders`, "_blank");
 	}, []);
@@ -459,7 +464,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 									<TooltipContent
 										container={portalContainerRef.current ?? undefined}
 									>
-										Capture Images
+										Capture Images ({formatForDisplay("Mod+Shift+C")})
 									</TooltipContent>
 								</Tooltip>
 								<Tooltip>
@@ -479,7 +484,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 									<TooltipContent
 										container={portalContainerRef.current ?? undefined}
 									>
-										Show Folders
+										Show Folders ({formatForDisplay("Mod+Shift+F")})
 									</TooltipContent>
 								</Tooltip>
 								<Tooltip>

@@ -15,6 +15,7 @@ import {
 	UserIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { formatForDisplay } from "@tanstack/react-hotkeys";
 import { Command } from "cmdk";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -712,7 +713,7 @@ function Actions({
 					>
 						<HugeiconsIcon icon={FloppyDiskIcon} size={18} strokeWidth={2} />
 						<span cmdk-item-text="">Save to Folder</span>
-						<div cmdk-shortcuts="">{capturedImageCount}</div>
+						<div cmdk-shortcuts="">{formatForDisplay("Mod+Shift+S")}</div>
 					</Command.Item>
 					<Command.Item
 						onSelect={() => onSaveImages(true)}
@@ -724,7 +725,7 @@ function Actions({
 							strokeWidth={2}
 						/>
 						<span cmdk-item-text="">Save & Clear</span>
-						<div cmdk-shortcuts="">{capturedImageCount}</div>
+						<div cmdk-shortcuts="">{formatForDisplay("Mod+S")}</div>
 					</Command.Item>
 				</>
 			)}
