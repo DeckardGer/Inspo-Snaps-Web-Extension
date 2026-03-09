@@ -2,6 +2,7 @@
 	"name": "inspo-snaps-extension",
 	"private": true,
 	"version": "1.0.0",
+	"description": "Save, organise, and share your visual inspiration. Capture images from any webpage and curate them in your inspiration library.",
 	"type": "module",
 	"scripts": {
 		"dev": "vite",

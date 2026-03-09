@@ -1,5 +1,6 @@
 import type browser from "webextension-polyfill";
 import { handleAuthUpdate } from "@/background/auth";
+import { logger } from "@/lib/logger";
 import { broadcast } from "@/background/broadcast";
 import { folderService } from "@/background/services/folders";
 import { imageService } from "@/background/services/images";
@@ -187,7 +188,7 @@ export const handleMessage = async (
 			}
 		}
 	} catch (error) {
-		console.error("[Background] Message handler error:", error);
+		logger.error("[Background] Message handler error:", error);
 		return {
 			success: false,
 			error: {

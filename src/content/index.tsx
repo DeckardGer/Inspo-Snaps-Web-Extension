@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import browser from "webextension-polyfill";
 import { Toolbar } from "@/content/toolbar/Toolbar";
 import { ENABLED_SITES_KEY, INSPO_SNAPS_DOMAIN } from "@/lib/config";
+import { logger } from "@/lib/logger";
 import { extensionShort, TOOLBAR_CORNER_KEY } from "@/lib/constants";
 import { normaliseTailwind } from "@/lib/utils";
 import { initializeAuth, useAuthStore } from "@/store/authStore";
@@ -155,7 +156,7 @@ const setupAuthBridge = () => {
 		// Validate message structure
 		if (event.data?.type !== "INSPO_SNAPS_AUTH_UPDATE") return;
 
-		console.log("[Auth Bridge] Received auth update from website");
+		logger.log("[Auth Bridge] Received auth update from website");
 
 		try {
 			// Forward to background script
@@ -164,7 +165,7 @@ const setupAuthBridge = () => {
 				payload: { session: event.data.payload?.session ?? null },
 			});
 		} catch (error) {
-			console.error("[Auth Bridge] Failed to forward auth update:", error);
+			logger.error("[Auth Bridge] Failed to forward auth update:", error);
 		}
 	});
 };

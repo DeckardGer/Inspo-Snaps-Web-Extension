@@ -1,4 +1,5 @@
 import browser from "webextension-polyfill";
+import { logger } from "@/lib/logger";
 import type { AuthSession } from "@/types/messages";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -41,7 +42,7 @@ export const broadcast = async (
 			) {
 				continue;
 			}
-			console.warn(`[Background] Failed to broadcast to tab ${tab.id}:`, error);
+			logger.warn(`[Background] Failed to broadcast to tab ${tab.id}:`, error);
 		}
 	}
 };

@@ -1,5 +1,6 @@
 import browser from "webextension-polyfill";
 import { create } from "zustand";
+import { logger } from "@/lib/logger";
 import type { AuthSession } from "@/types/messages";
 
 interface AuthState {
@@ -47,7 +48,7 @@ export const initializeAuth = async (): Promise<AuthSession | null> => {
 
 		return session;
 	} catch (error) {
-		console.error("[AuthStore] Failed to initialize auth:", error);
+		logger.error("[AuthStore] Failed to initialize auth:", error);
 		useAuthStore.getState().setInitialized();
 		return null;
 	}

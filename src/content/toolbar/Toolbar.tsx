@@ -34,6 +34,7 @@ import { useOrganizationSync } from "@/hooks/useOrganizationSync";
 import { useToolbarDrag } from "@/hooks/useToolbarDrag";
 import { useToolbarHotkeys } from "@/hooks/useToolbarHotkeys";
 import { INSPO_SNAPS_DOMAIN } from "@/lib/config";
+import { logger } from "@/lib/logger";
 import {
 	MAXIMISED_WIDTH,
 	MINIMISED_HEIGHT,
@@ -212,7 +213,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 				setFolders(updatedFolders);
 				setCurrentFolderId(null);
 			} catch (error) {
-				console.error("[Toolbar] Failed to fetch folders:", error);
+				logger.error("[Toolbar] Failed to fetch folders:", error);
 				showNotification("Failed to load folders.", "error");
 			}
 		},
@@ -264,7 +265,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ initialCorner }) => {
 					setIsPreviewOpen(false);
 				}
 			} catch (error) {
-				console.error("[Toolbar] Failed to save images:", error);
+				logger.error("[Toolbar] Failed to save images:", error);
 				const message =
 					error instanceof Error
 						? error.message

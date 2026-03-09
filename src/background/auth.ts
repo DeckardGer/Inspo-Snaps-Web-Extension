@@ -2,6 +2,7 @@ import type browser from "webextension-polyfill";
 import { broadcast } from "@/background/broadcast";
 import { cacheSession } from "@/background/session";
 import { INSPO_SNAPS_DOMAIN } from "@/lib/config";
+import { logger } from "@/lib/logger";
 import type { AuthSession } from "@/types/messages";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,13 +48,13 @@ export const handleExternalAuthMessage = async (
 	// Validate origin
 	const origin = sender.url ? new URL(sender.url).origin : null;
 	if (origin !== INSPO_SNAPS_DOMAIN) {
-		console.warn("[Background] Rejected external message from:", origin);
+		logger.warn("[Background] Rejected external message from:", origin);
 		return { success: false };
 	}
 
 	// Validate message structure
 	if (!isValidExternalAuthMessage(message)) {
-		console.warn("[Background] Invalid external auth message:", message);
+		logger.warn("[Background] Invalid external auth message:", message);
 		return { success: false };
 	}
 

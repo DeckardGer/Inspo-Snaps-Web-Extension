@@ -41,6 +41,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { flattenFolders } from "@/lib/transforms";
+import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 import { useOrganizationsStore } from "@/store/organizationsStore";
 import type { FlattenedFolder, Folder } from "@/types";
@@ -254,7 +255,7 @@ export const FolderMenu = memo(function FolderMenu({
 			// Navigate back to parent after successful deletion
 			setPages((prev) => prev.slice(0, -1));
 		} catch (error) {
-			console.error("[FolderMenu] Failed to delete folder:", error);
+			logger.error("[FolderMenu] Failed to delete folder:", error);
 			// Error is already displayed to the user via the service
 		} finally {
 			setIsSaving(false);

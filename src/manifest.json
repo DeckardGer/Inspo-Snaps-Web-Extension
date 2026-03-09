@@ -1,7 +1,7 @@
 {
 	"{{chrome}}.manifest_version": 3,
 	"{{firefox}}.manifest_version": 2,
-	"permissions": ["storage", "activeTab", "contextMenus", "cookies"],
+	"permissions": ["storage", "activeTab", "contextMenus"],
 	"host_permissions": ["<all_urls>"],
 	"{{chrome}}.externally_connectable": {
 		"matches": ["http://localhost:3000/*", "https://insposnaps.com/*"]

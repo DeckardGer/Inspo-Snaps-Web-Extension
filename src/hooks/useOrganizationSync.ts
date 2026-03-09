@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import browser from "webextension-polyfill";
+import { logger } from "@/lib/logger";
 import { organizationService } from "@/services/organizations";
 import { useAuthStore } from "@/store/authStore";
 import { useOrganizationsStore } from "@/store/organizationsStore";
@@ -14,7 +15,7 @@ export const useOrganizationSync = () => {
 			organizationService
 				.getOrganizations()
 				.then(setOrganizationsData)
-				.catch(console.error);
+				.catch(logger.error);
 		}
 
 		// Listen for auth updates
@@ -24,7 +25,7 @@ export const useOrganizationSync = () => {
 					organizationService
 						.getOrganizations()
 						.then(setOrganizationsData)
-						.catch(console.error);
+						.catch(logger.error);
 				} else {
 					setOrganizations(null);
 				}
