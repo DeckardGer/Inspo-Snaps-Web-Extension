@@ -8,7 +8,7 @@ function generateManifest() {
 	const manifest = readJsonFile("src/manifest.json");
 	const pkg = readJsonFile("package.json");
 	return {
-		name: pkg.name,
+		name: "InspoSnaps",
 		description: pkg.description,
 		version: pkg.version,
 		...manifest,
