@@ -1,6 +1,5 @@
 import type browser from "webextension-polyfill";
 import { handleAuthUpdate } from "@/background/auth";
-import { logger } from "@/lib/logger";
 import { broadcast } from "@/background/broadcast";
 import { folderService } from "@/background/services/folders";
 import { imageService } from "@/background/services/images";
@@ -10,6 +9,7 @@ import {
 	getCachedSession,
 	needsRefresh,
 } from "@/background/session";
+import { logger } from "@/lib/logger";
 import type { Message, ServiceResponse } from "@/types/messages";
 
 // Re-export for use in background/index.ts
@@ -43,7 +43,7 @@ export const handleMessage = async (
 					parentId,
 					organizationId,
 				);
-				await broadcast(
+				broadcast(
 					{ type: "FOLDERS_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
 				);
@@ -53,7 +53,7 @@ export const handleMessage = async (
 			case "UPDATE_FOLDER": {
 				const { id, updates, organizationId } = message.payload;
 				const folder = await folderService.update(id, updates, organizationId);
-				await broadcast(
+				broadcast(
 					{ type: "FOLDERS_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
 				);
@@ -63,7 +63,7 @@ export const handleMessage = async (
 			case "DELETE_FOLDER": {
 				const { id, organizationId } = message.payload;
 				await folderService.delete(id, organizationId);
-				await broadcast(
+				broadcast(
 					{ type: "FOLDERS_CHANGED" },
 					{ excludeTabId: sender.tab?.id },
 				);
@@ -83,20 +83,14 @@ export const handleMessage = async (
 			case "SAVE_IMAGES": {
 				const { images, organizationId } = message.payload;
 				const savedImages = await imageService.saveMany(images, organizationId);
-				await broadcast(
-					{ type: "IMAGES_CHANGED" },
-					{ excludeTabId: sender.tab?.id },
-				);
+				broadcast({ type: "IMAGES_CHANGED" }, { excludeTabId: sender.tab?.id });
 				return { success: true, data: { images: savedImages } };
 			}
 
 			case "DELETE_IMAGE": {
 				const { id, organizationId } = message.payload;
 				await imageService.delete(id, organizationId);
-				await broadcast(
-					{ type: "IMAGES_CHANGED" },
-					{ excludeTabId: sender.tab?.id },
-				);
+				broadcast({ type: "IMAGES_CHANGED" }, { excludeTabId: sender.tab?.id });
 				return { success: true, data: undefined };
 			}
 
@@ -107,10 +101,7 @@ export const handleMessage = async (
 					folderId,
 					organizationId,
 				);
-				await broadcast(
-					{ type: "IMAGES_CHANGED" },
-					{ excludeTabId: sender.tab?.id },
-				);
+				broadcast({ type: "IMAGES_CHANGED" }, { excludeTabId: sender.tab?.id });
 				return { success: true, data: { image } };
 			}
 
@@ -194,7 +185,6 @@ export const handleMessage = async (
 			error: {
 				message: error instanceof Error ? error.message : "Unknown error",
 				code: "HANDLER_ERROR",
-				cause: error instanceof Error ? error : undefined,
 			},
 		};
 	}

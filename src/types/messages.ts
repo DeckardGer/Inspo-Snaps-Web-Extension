@@ -100,7 +100,6 @@ export type ServiceResponse<T> =
 export interface ServiceError {
 	message: string;
 	code?: string;
-	cause?: Error;
 }
 
 // Specific response types

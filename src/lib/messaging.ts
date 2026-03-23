@@ -12,14 +12,22 @@ class MessageError extends Error {
 	}
 }
 
+const MESSAGE_TIMEOUT_MS = 120_000; // 2 minutes
+
 /**
  * Send message to background script with type safety
  */
 export const sendMessage = async <T>(message: Message): Promise<T> => {
 	try {
-		const response = (await browser.runtime.sendMessage(
-			message,
-		)) as ServiceResponse<T>;
+		const response = (await Promise.race([
+			browser.runtime.sendMessage(message),
+			new Promise<never>((_, reject) =>
+				setTimeout(
+					() => reject(new MessageError("Request timed out", "TIMEOUT")),
+					MESSAGE_TIMEOUT_MS,
+				),
+			),
+		])) as ServiceResponse<T>;
 
 		if (!response) {
 			throw new MessageError(
@@ -32,7 +40,6 @@ export const sendMessage = async <T>(message: Message): Promise<T> => {
 			throw new MessageError(
 				response.error.message || "Operation failed",
 				response.error.code || "UNKNOWN_ERROR",
-				response.error.cause,
 			);
 		}
 
